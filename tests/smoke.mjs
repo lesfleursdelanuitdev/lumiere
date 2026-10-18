@@ -97,8 +97,8 @@ try {
   await page.dblclick("#s-opacity"); check(Math.abs((await active()).opacity - 0.8) < 1e-9, "double-tapping a slider resets it");
   // Software rendering here can take seconds per frame, so wait for the sheet to finish animating.
   const settled = () => page.waitForFunction(() => document.getAnimations().every(a => a.playState !== "running"), null, { timeout: 120000 });
-  const h0 = (await page.locator("#sheet").boundingBox()).height; await page.click("#grab"); await page.waitForFunction(() => state.tall, null, { timeout: 120000 }).catch(() => {}); await settled();
-  check((await page.locator("#sheet").boundingBox()).height > h0 && await page.evaluate(() => state.tall), "the grabber makes the panel taller");
+  const maxH = () => page.evaluate(() => parseFloat(getComputedStyle(document.querySelector("#panel")).maxHeight)), h0 = await maxH(); await page.click("#grab"); await page.waitForFunction(() => state.tall, null, { timeout: 120000 }).catch(() => {}); await settled();
+  check(await maxH() > h0 && await page.evaluate(() => state.tall), "the grabber makes the panel taller");
   await page.click("#grab"); await page.waitForFunction(() => !state.tall, null, { timeout: 120000 }).catch(() => {}); await settled();
   check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "no horizontal scrolling in the editor");
   const small = await page.evaluate(() => [...document.querySelectorAll("#sheet button, #top button")].filter(b => b.offsetParent && !b.closest(".ghost") && b.id !== "grab") /* the grabber is a full-width strip */.map(b => { const r = b.getBoundingClientRect(), cs = getComputedStyle(b, "::before");
