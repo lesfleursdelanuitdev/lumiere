@@ -25,6 +25,11 @@ selection with a small on-device AI model. Nothing is uploaded.
 beams, Spotlight, Golden side light, Moon rim, Night bokeh. Every light a preset adds is an
 ordinary, fully editable layer.
 
+**Working with it.** The app opens on an empty canvas with a drop zone: drop a photo or choose
+one from your library (or try the sample). Lights are listed top to bottom; reorder them by
+dragging the handle on the left, or by long-pressing a row. Tap a light to open its editor. The
+sheet slides between the list and the editor, and between lights, so you keep your place.
+
 **Also:** undo/redo for every change, pinch to zoom, export to JPEG or PNG at full resolution
 (up to about 16.7 megapixels, a browser limit for now), and editable project files (`.lumiere.json`).
 
@@ -49,7 +54,7 @@ Select Object or a preset.
 ```sh
 npm install
 npx playwright install chromium
-npm test                    # loads the app, opens the editor, draws a light, checks undo
+npm test                    # start screen, opening a photo, reordering (mouse and touch), editor, drawing, undo
 npm run test:selection      # also runs AI subject selection (slow without a GPU)
 ```
 

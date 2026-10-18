@@ -30,6 +30,9 @@ Five kinds: **Subject**, **Object**, **Brush**, **Radial gradient**, **Linear gr
 
 ## 2. Interface (phone first)
 
+- **Start:** an empty canvas with a drop zone. Drop a photo (desktop) or choose one from the
+  library (phone); "Or try a sample photo" loads a demo. The sheet slides up once a photo is open.
+  Dropping a file onto the app later opens it as the new photo, keeping the lights.
 - The photograph fills the screen. The top bar holds the name, Undo, Redo, Open and Export.
 - One bottom sheet, three states:
   1. **Bar:** "Lights · n" and "Presets".
@@ -40,6 +43,12 @@ Five kinds: **Subject**, **Object**, **Brush**, **Radial gradient**, **Linear gr
      previous/next light (or swipe the header), and show/hide. Opacity and blend mode are always
      visible. Three tabs: **Light**, **Blurs**, **Mask**. At the bottom: Show this light alone,
      Duplicate, Delete.
+- **Reordering:** drag the handle on the left of a row, or long-press anywhere on the row and
+  drag. Other rows move aside as you drag; the list scrolls when you reach its edge.
+- **Transitions:** the sheet's height eases between states; list ⇄ editor and light ⇄ light
+  slide sideways, the Light/Blurs/Mask tabs slide their content and move the underline, and
+  opening a blur or mask part expands it. All motion is turned off when the device asks for
+  reduced motion.
 - **Touch rule:** one finger edits what is selected (the gradient, a blur center, the brush, a
   mask shape, an object box). Two fingers always pan and zoom.
 - **The sheet gets out of the way:** while a finger is on the photo, the sheet shrinks to one

@@ -56,13 +56,12 @@ svg.i { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-widt
 #perf.good b.fps { color: #8fd694; } #perf.ok b.fps { color: var(--tungsten); } #perf.slow b.fps { color: var(--mask); }
 #soloTag { right: var(--gutter-r); color: var(--tungsten-ink); background: var(--tungsten); }
 
-#sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; background: var(--surface); border-top: 1px solid var(--line);
+#sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; overflow: hidden; background: var(--surface); border-top: 1px solid var(--line);
   border-radius: 18px 18px 0 0; padding-bottom: env(safe-area-inset-bottom, 0px); box-shadow: 0 -12px 40px rgb(0 0 0 / .35); }
-#panel { max-height: min(48vh, 400px); overflow-y: auto; overscroll-behavior: contain; padding: 0 var(--gutter-r) 12px var(--gutter-l); display: grid; gap: 12px; }
+#panel, .ghost { max-height: min(48vh, 400px); overflow-y: auto; overscroll-behavior: contain; padding: 0 var(--gutter-r) 12px var(--gutter-l); display: grid; gap: 12px; }
 #sheet.peek #panel { display: none; }
 #peek { padding: 12px var(--gutter-r) 12px var(--gutter-l); font: 500 12px var(--f-num); color: var(--muted); font-variant-numeric: tabular-nums; }
 #peek b { color: var(--tungsten); font-weight: 500; }
-@media (prefers-reduced-motion: no-preference) { #panel.slide-in { animation: slide .18s ease-out; } @keyframes slide { from { transform: translateX(14px); opacity: .4; } } }
 
 .sticky { position: sticky; top: 0; z-index: 2; background: var(--surface); padding-top: 12px; display: grid; gap: 10px; }
 .row { display: flex; align-items: center; gap: 8px; min-width: 0; }
@@ -83,7 +82,7 @@ h2 { font-size: 15px; font-weight: 600; margin: 0; }
 .seg.small button { padding: 6px 2px; font-size: 12px; }
 .seg.tabs { background: none; padding: 0; border-bottom: 1px solid var(--line); border-radius: 0; }
 .seg.tabs button { border-radius: 0; padding: 10px 4px; border-bottom: 2px solid transparent; }
-.seg.tabs button[aria-pressed="true"] { background: none; color: var(--tungsten); border-bottom-color: var(--tungsten); }
+.seg.tabs button[aria-pressed="true"] { background: none; color: var(--tungsten); }
 .seg.tabs small { font: 500 11px var(--f-num); color: var(--muted); margin-left: 4px; }
 
 .slider { display: grid; gap: 4px; }
@@ -116,16 +115,15 @@ label.btn input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 
 /* light list */
 .lights { display: grid; gap: 4px; }
-.light { display: grid; grid-template-columns: 30px 52px minmax(0,1fr) auto; align-items: center; gap: 8px; padding: 4px; border-radius: 12px; }
-.light.dragging { background: var(--raise); box-shadow: 0 0 0 1px var(--tungsten); }
-.grip { width: 30px; height: 44px; display: grid; place-items: center; color: var(--muted); touch-action: none; cursor: grab; }
-.thumb { width: 52px; height: 52px; border-radius: 8px; background: #000; border: 1px solid var(--line); object-fit: cover; display: block; }
+.light { display: grid; grid-template-columns: 36px 52px minmax(0,1fr) auto; align-items: center; gap: 8px; padding: 4px; border-radius: 12px; }
+.grip { width: 36px; height: 48px; display: grid; place-items: center; color: var(--muted); touch-action: none; cursor: grab; }
+.thumb { pointer-events: none; -webkit-touch-callout: none; width: 52px; height: 52px; border-radius: 8px; background: #000; border: 1px solid var(--line); object-fit: cover; display: block; }
 .light .name { text-align: left; min-width: 0; padding: 6px 0; }
 .light .name b { display: block; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .light .name small { color: var(--muted); font-size: 11.5px; }
 .eye { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 8px; color: var(--muted); }
 .eye[aria-pressed="false"] { opacity: .4; }
-.photo-row { display: grid; grid-template-columns: 30px 52px minmax(0,1fr) auto; gap: 8px; align-items: center; padding: 4px; color: var(--muted); }
+.photo-row { display: grid; grid-template-columns: 36px 52px minmax(0,1fr) auto; gap: 8px; align-items: center; padding: 4px; color: var(--muted); }
 
 /* editor */
 .ed-head { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 6px; touch-action: pan-y; }
@@ -174,6 +172,29 @@ label.btn input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .preset b { font-weight: 600; font-size: 13.5px; } .preset small { display: block; color: var(--muted); font-size: 12px; line-height: 1.35; margin-top: 2px; }
 .preset .tag { font: 500 10.5px var(--f-num); color: var(--muted); }
 #modal img.result { max-width: 100%; max-height: 50vh; justify-self: center; border-radius: 8px; -webkit-user-select: auto; user-select: auto; -webkit-touch-callout: default; }
+.sec { display: grid; gap: 12px; }
+.ghost { position: absolute; left: 0; right: 0; pointer-events: none; overflow: hidden; }
+.seg.tabs { position: relative; }
+.seg.tabs .ind { position: absolute; left: 0; bottom: -1px; width: calc(100% / 3); height: 2px; border-radius: 2px; background: var(--tungsten); }
+.light { position: relative; background: var(--surface); transition: transform .2s cubic-bezier(.2,.8,.2,1); }
+.light.dragging { transition: none; z-index: 3; background: var(--raise); box-shadow: 0 12px 28px rgb(0 0 0 / .5), 0 0 0 1px var(--tungsten); }
+.lights.sorting { touch-action: none; }
+#exportBtn:disabled { opacity: .35; cursor: default; }
+#drop { position: fixed; z-index: 3; left: 0; right: 0; top: calc(env(safe-area-inset-top, 0px) + 56px); bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+  display: grid; align-content: center; justify-items: center; gap: 12px; padding: 0 var(--gutter-r) 0 var(--gutter-l); }
+#drop .dz { position: relative; width: min(440px, 100%); display: grid; justify-items: center; gap: 10px; text-align: center; padding: 44px 24px 36px; border-radius: 22px; cursor: pointer;
+  border: 1.5px dashed color-mix(in srgb, var(--tungsten) 45%, var(--line)); background: color-mix(in srgb, var(--surface) 70%, transparent); transition: border-color .2s, background-color .2s, transform .2s; }
+#drop .dz svg { width: 46px; height: 46px; stroke: var(--tungsten); fill: none; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; margin-bottom: 4px; }
+#drop .dz b { font-size: 18px; font-weight: 600; }
+#drop .dz .hint { max-width: 32ch; }
+#drop .dz .chip { margin-top: 8px; }
+#drop .dz input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+#drop .dz:hover, #drop.over .dz { border-color: var(--tungsten); background: color-mix(in srgb, var(--tungsten) 9%, var(--surface)); }
+#drop.over .dz { transform: scale(1.02); }
+#drop .link { color: var(--muted); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; padding: 8px; }
+#drop.replace { z-index: 7; inset: 0; background: rgb(13 12 18 / .78); }
+#drop.replace .link { display: none; }
+@media (prefers-reduced-motion: reduce) { .light, #drop .dz { transition: none; } }
 #fatal { position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--muted); }
 </style>
 </head>
@@ -181,6 +202,16 @@ label.btn input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 
 <canvas id="gl" class="stage" aria-label="Photograph being edited. One finger edits the selected light, blur or mask; two fingers pan and zoom."></canvas>
 <canvas id="ov" class="stage" aria-hidden="true"></canvas>
+<div id="drop" hidden>
+  <label class="dz">
+    <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="10" width="36" height="28" rx="4"/><circle cx="17" cy="20" r="3.2"/><path d="m42 31-9-9-15 16"/><path d="M24 2v6M33 4l-3 5M15 4l3 5"/></svg>
+    <b id="dropTitle">Add a photograph</b>
+    <span class="hint" id="dropHint">Drop a JPEG, PNG or WebP here, or tap to choose one from your photos.</span>
+    <span class="chip primary">Choose a photo</span>
+    <input type="file" id="dropFile" accept="image/jpeg,image/png,image/webp,.json,application/json">
+  </label>
+  <button class="link" id="trySample">Or try a sample photo</button>
+</div>
 
 <header id="top">
   <div id="mark"><b>Lumière</b><small>by Les Fleurs de la Nuit</small></div>
@@ -192,7 +223,7 @@ label.btn input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 <div id="perf" class="float" hidden></div>
 <div id="soloTag" class="float" hidden>This light alone</div>
 <div id="toast" hidden></div>
-<section id="sheet"><div id="peek" hidden></div><div id="panel"></div></section>
+<section id="sheet" hidden><div id="peek" hidden></div><div id="panel"></div></section>
 <div id="modal" hidden></div>
 
 <script>
@@ -223,7 +254,7 @@ const state = {
   doc: { w: 0, h: 0, pw: 0, ph: 0, mw: 0, mh: 0, name: "photo" },
   layers: [],            // bottom → top. Each: { light, blurs[], mask{pieces[],density,feather,invert}, blend, opacity }
   activeId: null,
-  ui: "list",            // bar | list | editor
+  ui: "none",            // none (no photo yet) | bar | list | editor
   section: "light",      // light | blurs | mask (inside the editor)
   focus: null,           // id of the blur or mask piece being edited
   drawing: null,         // { kind: "light" } or { kind: "piece", id }: the next drag draws that shape
@@ -460,6 +491,7 @@ let dirty = true; const frameTimes = []; const perf = $("#perf"); let perfHide =
 const markDirty = () => { dirty = true; };
 function loop(t) {
   requestAnimationFrame(loop);
+  if (!assets.has("base")) { if (dirty) { dirty = false; gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, glCanvas.width, glCanvas.height); gl.clearColor(13 / 255, 12 / 255, 18 / 255, 1); gl.clear(gl.COLOR_BUFFER_BIT); og.setTransform(1, 0, 0, 1, 0, 0); og.clearRect(0, 0, ov.width, ov.height); } return; }
   if (dirty) { dirty = false; renderPreview(); drawOverlay(); if (state.interacting) { frameTimes.push(t); if (frameTimes.length > 30) frameTimes.shift(); showPerf(); } return; }
   if (state.ui === "list" && !state.interacting) updateOneThumb();
 }
@@ -477,7 +509,7 @@ function endInteract(delay = 0) { clearTimeout(settleTimer); settleTimer = setTi
 /* ═════════════════════════ view ═════════════════════════ */
 const ov = $("#ov"), og = ov.getContext("2d");
 function resize() { const dpr = devicePixelRatio || 1; for (const c of [glCanvas, ov]) { c.width = Math.round(innerWidth * dpr); c.height = Math.round(innerHeight * dpr); } markDirty(); }
-function visibleArea() { const top = $("#top").getBoundingClientRect().bottom, bottom = $("#sheet").getBoundingClientRect().top; return { x: 0, y: top, w: innerWidth, h: Math.max(80, bottom - top) }; }
+function visibleArea() { const sh = $("#sheet"), top = $("#top").offsetHeight, bottom = sh.hidden ? innerHeight : innerHeight - sh.offsetHeight; return { x: 0, y: top, w: innerWidth, h: Math.max(80, bottom - top) }; }
 function fitView() { const a = visibleArea(), { pw, ph } = state.doc, m = 16, z = Math.min((a.w - 2 * m) / pw, (a.h - 2 * m) / ph); state.view = { zoom: z, x: a.x + (a.w - pw * z) / 2, y: a.y + (a.h - ph * z) / 2 }; markDirty(); }
 const toScreen = (u, v) => [state.view.x + u * state.doc.pw * state.view.zoom, state.view.y + v * state.doc.ph * state.view.zoom];
 const toDoc = (x, y) => [(x - state.view.x) / (state.doc.pw * state.view.zoom), (y - state.view.y) / (state.doc.ph * state.view.zoom)];
@@ -567,7 +599,7 @@ function restore(k) { const s = hist.stack[k]; hist.i = k; state.layers = s.laye
 const undo = () => { if (hist.i > 0) restore(hist.i - 1); };
 const redo = () => { if (hist.i < hist.stack.length - 1) restore(hist.i + 1); };
 function resetHistory() { hist.stack = []; hist.i = -1; commit(); }
-function updateUndo() { $("#undo").disabled = hist.i <= 0; $("#redo").disabled = hist.i >= hist.stack.length - 1; }
+function updateUndo() { $("#undo").disabled = hist.i <= 0; $("#redo").disabled = hist.i >= hist.stack.length - 1; $("#exportBtn").disabled = !assets.has("base"); }
 
 /* ═════════════════════════ model: lights, blurs, pieces ═════════════════════════ */
 const radialLight = (o = {}) => ({ type: "radial", x: 0.5, y: 0.4, rx: 0.3, ry: 0.3, angle: 0, soft: 0.85, color: "#ffb87b", ...o });
@@ -727,10 +759,9 @@ const PRESETS = [
     make: async s => [makeLayer("Bokeh", imageLight(await libraryAsset("bokeh"), { x: 0.5, y: 0.45, scale: 1.4 }), { opacity: 0.6, blurs: [gaussBlur(0.006)], mask: behind() })] },
 ];
 function openPresets() {
-  $("#modal").innerHTML = `<div class="card"><h3>Presets</h3><p class="hint">One tap adds a set of lights placed around your subject. Each light stays fully editable.</p>
+  openModal(`<div class="card"><h3>Presets</h3><p class="hint">One tap adds a set of lights placed around your subject. Each light stays fully editable.</p>
     <div class="presets">${PRESETS.map(p => `<button class="preset" data-preset="${p.id}"><i style="background:${p.look}"></i><span><b>${p.name}</b><small>${p.desc}</small></span></button>`).join("")}</div>
-    <button class="chip" data-close>Cancel</button></div>`;
-  $("#modal").hidden = false;
+    <button class="chip" data-close>Cancel</button></div>`);
 }
 async function applyPreset(id) {
   const p = PRESETS.find(x => x.id === id); closeModal();
@@ -738,7 +769,7 @@ async function applyPreset(id) {
   const cov = await withBusy("Finding the subject…", () => subjectCoverage());
   if (cov) s = subjectStats(cov); else toast("Added without a subject mask, because the subject could not be found.", 4000);
   const ls = await p.make(s); if (!cov) for (const l of ls) l.mask.pieces = [];
-  state.layers.push(...ls); state.activeId = ls[ls.length - 1].id; state.ui = "list"; commit(); renderPanel(); markDirty();
+  state.layers.push(...ls); go(state.ui === "editor" ? "back" : "none", () => { state.activeId = ls[ls.length - 1].id; state.ui = "list"; }); commit(); markDirty(); arrive(ls.map(x => x.id));
   toast(`${p.name} added: ${ls.length} light${ls.length > 1 ? "s" : ""}. Tap one to adjust it.`, 3200);
 }
 
@@ -761,7 +792,12 @@ glCanvas.addEventListener("pointerup", pointerEnd); glCanvas.addEventListener("p
 glCanvas.addEventListener("wheel", e => { e.preventDefault(); const z = clamp(state.view.zoom * Math.exp(-e.deltaY * 0.0015), 0.03, 40), dx = (e.clientX - state.view.x) / state.view.zoom, dy = (e.clientY - state.view.y) / state.view.zoom; state.view = { zoom: z, x: e.clientX - dx * z, y: e.clientY - dy * z }; markDirty(); }, { passive: false });
 document.addEventListener("gesturestart", e => e.preventDefault());
 
-function peek(html) { const p = $("#peek"); if (html == null) { $("#sheet").classList.remove("peek"); p.hidden = true; return; } $("#sheet").classList.add("peek"); p.hidden = false; p.innerHTML = html; }
+function peek(html) {
+  const p = $("#peek"), sh = $("#sheet"), on = html != null;
+  if (on) p.innerHTML = html;
+  if (on === sh.classList.contains("peek")) return;
+  morphSheet(() => { sh.classList.toggle("peek", on); p.hidden = !on; }, 200);
+}
 const fmtXY = (u, v) => `x ${u.toFixed(2)} · y ${v.toFixed(2)}${u < 0 || u > 1 || v < 0 || v > 1 ? " · <b>outside the photo</b>" : ""}`;
 function startSingle(x, y, e) {
   const l = activeLayer(), pan = e.shiftKey || state.ui !== "editor" || !l;
@@ -847,7 +883,9 @@ const slider = (k, l, f) => { const s = SL[k], v = s.get(l, f); return `<div cla
 const seg = (key, opts, cur, cls = "") => `<div class="seg ${cls}" role="group">${opts.map(([v, t]) => `<button data-seg="${key}" data-val="${v}" aria-pressed="${v === cur}">${t}</button>`).join("")}</div>`;
 const chip = (act, text, pressed, extra = "") => `<button class="chip ${extra}" data-act="${act}"${pressed === undefined ? "" : ` aria-pressed="${pressed}"`}>${text}</button>`;
 
-function renderPanel(anim) {
+function renderPanel() {
+  $("#sheet").hidden = state.ui === "none";
+  if (state.ui === "none") { panel.innerHTML = ""; updateUndo(); return; }
   const l = activeLayer(); let h = "";
   if (state.ui === "editor" && !l) state.ui = "list";
   if (state.ui === "bar") {
@@ -871,11 +909,11 @@ function renderPanel(anim) {
         <button class="eye" data-act="eye" data-id="${l.id}" aria-pressed="${l.visible}" aria-label="${l.visible ? "Hide" : "Show"} this light">${l.visible ? IC.eyeOn : IC.eyeOff}</button></div>
       ${slider("opacity", l)}${seg("blend", BLENDS.map(([k, t]) => [k, t === "Color Dodge" ? "Dodge" : t]), l.blend, "small")}
       ${seg("section", [["light", "Light"], ["blurs", `Blurs<small>${l.blurs.length}</small>`], ["mask", `Mask<small>${l.mask.pieces.length}</small>`]], state.section, "tabs")}</div>`;
-    h += state.section === "light" ? lightSection(l) : state.section === "blurs" ? blurSection(l) : maskSection(l);
+    h += `<div class="sec">${state.section === "light" ? lightSection(l) : state.section === "blurs" ? blurSection(l) : maskSection(l)}</div>`;
     h += `<div class="chips">${chip("solo", "Show this light alone", state.solo)}${chip("dup", IC.dup + " Duplicate")}${chip("del-layer", IC.del + " Delete light", undefined, "danger")}</div>`;
   }
   panel.innerHTML = h;
-  if (anim) { panel.classList.remove("slide-in"); void panel.offsetWidth; panel.classList.add("slide-in"); }
+  const tabs = panel.querySelector(".seg.tabs"); if (tabs) tabs.insertAdjacentHTML("beforeend", `<span class="ind" style="transform:translateX(${SECTIONS.indexOf(state.section) * 100}%)"></span>`);
   updateUndo(); requestAnimationFrame(() => drawOverlay());
 }
 function lightSection(l) {
@@ -945,11 +983,12 @@ panel.addEventListener("change", async e => {
   if (t.id === "lightFile" && t.files[0]) { try { l.light.key = await assetFromFile(t.files[0]); commit(); renderPanel(); markDirty(); } catch (err) { toast(err.message); } }
 });
 panel.addEventListener("click", async e => {
+  if (Date.now() - suppressClick < 350) return;
   const b = e.target.closest("button,[data-lib]"); if (!b) return; const l = activeLayer();
   if (b.dataset.lib) { l.light.key = await libraryAsset(b.dataset.lib); commit(); renderPanel(); markDirty(); return; }
   if (b.dataset.seg) {
     const v = b.dataset.val, k = b.dataset.seg, f = focusedItem(l);
-    if (k === "section") { state.section = v; state.focus = null; state.drawing = null; renderPanel(); markDirty(); return; }
+    if (k === "section") { if (v !== state.section) go("section", () => { state.section = v; state.focus = null; state.drawing = null; }); markDirty(); return; }
     if (k === "brush-mode") { state.brush.erase = v === "erase"; renderPanel(); return; }
     if (k === "blend") l.blend = v;
     if (k === "method") f.method = v;
@@ -962,21 +1001,21 @@ panel.addEventListener("click", async e => {
   const act = b.dataset.act, id = b.dataset.id;
   const blur = id && l?.blurs.find(x => x.id === id), piece = id && l?.mask.pieces.find(x => x.id === id), move = (arr, item, d) => { const i = arr.indexOf(item); arr.splice(i, 1); arr.splice(i + d, 0, item); };
   switch (act) {
-    case "open-list": state.ui = "list"; renderPanel(true); break;
-    case "close-list": state.ui = "bar"; renderPanel(); break;
+    case "open-list": go("up", () => { state.ui = "list"; }); break;
+    case "close-list": go("down", () => { state.ui = "bar"; }); break;
     case "presets": openPresets(); break;
     case "new-light": openNewLight(); break;
-    case "edit": state.activeId = id; state.ui = "editor"; state.section = "light"; state.focus = null; state.drawing = null; renderPanel(true); markDirty(); break;
-    case "to-list": state.ui = "list"; state.drawing = null; state.focus = null; renderPanel(true); markDirty(); break;
+    case "edit": go("forward", () => { state.activeId = id; state.ui = "editor"; state.section = "light"; state.focus = null; state.drawing = null; }); markDirty(); break;
+    case "to-list": go("back", () => { state.ui = "list"; state.drawing = null; state.focus = null; }); markDirty(); break;
     case "prev": case "next": switchLayer(act === "next" ? 1 : -1); break;
     case "eye": { const x = state.layers.find(y => y.id === id); x.visible = !x.visible; commit(); renderPanel(); markDirty(); break; }
     case "solo": state.solo = !state.solo; renderPanel(); markDirty(); break;
-    case "dup": { const c = cloneLayer(l); c.id = uid(); c.name = l.name + " copy"; c.blurs.forEach(x => x.id = uid()); c.mask.pieces.forEach(x => x.id = uid()); state.layers.splice(state.layers.indexOf(l) + 1, 0, c); state.activeId = c.id; commit(); renderPanel(true); markDirty(); break; }
-    case "del-layer": { const i = state.layers.indexOf(l); state.layers.splice(i, 1); state.activeId = (state.layers[Math.max(0, i - 1)] || {}).id || null; state.ui = "list"; commit(); renderPanel(true); markDirty(); toast(`Deleted ${l.name}. Undo brings it back.`); break; }
+    case "dup": { const c = cloneLayer(l); c.id = uid(); c.name = l.name + " copy"; c.blurs.forEach(x => x.id = uid()); c.mask.pieces.forEach(x => x.id = uid()); state.layers.splice(state.layers.indexOf(l) + 1, 0, c); go("forward", () => { state.activeId = c.id; }); commit(); markDirty(); break; }
+    case "del-layer": { const i = state.layers.indexOf(l); state.layers.splice(i, 1); go("back", () => { state.activeId = (state.layers[Math.max(0, i - 1)] || {}).id || null; state.ui = "list"; }); commit(); markDirty(); toast(`Deleted ${l.name}. Undo brings it back.`); break; }
     case "color": l.light.color = b.dataset.val; commit(); renderPanel(); markDirty(); break;
     case "fine": state.fine = !state.fine; renderPanel(); break;
     case "draw-light": state.drawing = state.drawing ? null : { kind: "light" }; renderPanel(); break;
-    case "focus": state.focus = state.focus === id ? null : id; state.drawing = null; renderPanel(); markDirty(); break;
+    case "focus": go("expand", () => { state.focus = state.focus === id ? null : id; state.drawing = null; }); markDirty(); break;
     case "add-radial-blur": { const x = radialBlur(0.4, 0.5, 0.5); l.blurs.push(x); state.focus = x.id; commit(); renderPanel(); markDirty(); break; }
     case "add-gauss-blur": { const x = gaussBlur(0.02); l.blurs.push(x); state.focus = x.id; commit(); renderPanel(); markDirty(); break; }
     case "blur-on": blur.on = !blur.on; commit(); renderPanel(); markDirty(); break;
@@ -1008,41 +1047,121 @@ async function addPiece(l, type) {
 }
 function switchLayer(d) {
   const list = [...state.layers].reverse(), i = list.findIndex(x => x.id === state.activeId), n = list[i + d]; if (!n) return;
-  state.activeId = n.id; state.focus = null; state.drawing = null; renderPanel(true); markDirty();
+  go(d > 0 ? "forward" : "back", () => { state.activeId = n.id; state.focus = null; state.drawing = null; }); markDirty();
 }
 function openNewLight() {
-  $("#modal").innerHTML = `<div class="card"><h3>New light</h3><div class="opts">
+  openModal(`<div class="card"><h3>New light</h3><div class="opts">
     <button class="opt" data-new="radial"><span>Radial gradient<small>Draw it on the photo: press at the center and drag out</small></span><span class="fmt">Screen</span></button>
     <button class="opt" data-new="image"><span>Light image<small>Window, bokeh, light leak, sun flare, or your own</small></span><span class="fmt">Screen</span></button>
-  </div><button class="chip" data-close>Cancel</button></div>`; $("#modal").hidden = false;
+  </div><button class="chip" data-close>Cancel</button></div>`);
 }
 async function newLight(kind) {
   closeModal(); const n = state.layers.length + 1;
   const l = kind === "radial" ? makeLayer(`Light ${n}`, radialLight()) : makeLayer(`Light ${n}`, imageLight(await libraryAsset("window"), { scale: 0.5 }));
   const i = state.layers.findIndex(x => x.id === state.activeId); state.layers.splice(i >= 0 ? i + 1 : state.layers.length, 0, l);
-  state.activeId = l.id; state.ui = "editor"; state.section = "light"; state.focus = null; state.drawing = kind === "radial" ? { kind: "light" } : null;
-  commit(); renderPanel(true); markDirty(); if (kind === "radial") toast("Press where the light goes and drag outward.");
+  go("forward", () => { state.activeId = l.id; state.ui = "editor"; state.section = "light"; state.focus = null; state.drawing = kind === "radial" ? { kind: "light" } : null; });
+  commit(); markDirty(); if (kind === "radial") toast("Press where the light goes and drag outward.");
 }
 
-/* list reordering: drag the grip; swipe the editor header to change lights */
-let reorder = null;
+/* ── reordering the light list: press the handle (or long-press a row), drag, release ── */
+let sort = null, longPress = null, swipe = null, suppressClick = 0;
 panel.addEventListener("pointerdown", e => {
-  const grip = e.target.closest("[data-grip]");
-  if (grip) { e.preventDefault(); reorder = { id: grip.dataset.grip, moved: false }; document.querySelector(`.light[data-id="${reorder.id}"]`)?.classList.add("dragging"); return; }
-  const head = e.target.closest("#edHead"); if (head && !e.target.closest("button")) { swipe = { x: e.clientX, y: e.clientY }; }
+  const row = e.target.closest(".light[data-id]");
+  if (row && e.target.closest("[data-grip]")) { e.preventDefault(); startSort(row, e); return; }
+  if (row && e.pointerType !== "mouse" && !e.target.closest(".eye")) {
+    longPress = { row, e, x: e.clientX, y: e.clientY, t: setTimeout(() => { if (longPress) { startSort(longPress.row, longPress.e); longPress = null; } }, 420) };
+  }
+  if (e.target.closest("#edHead") && !e.target.closest("button")) swipe = { x: e.clientX, y: e.clientY };
 });
-let swipe = null;
+panel.addEventListener("touchmove", e => { if (sort) e.preventDefault(); }, { passive: false }); // keep the list from scrolling under a drag
+function startSort(row, e) {
+  const rows = [...panel.querySelectorAll(".light[data-id]")], from = rows.indexOf(row);
+  sort = { row, rows, from, to: from, y0: e.clientY, s0: panel.scrollTop, tops: rows.map(r => r.offsetTop), hs: rows.map(r => r.offsetHeight) };
+  sort.gap = rows.length > 1 ? rows[1].offsetTop - rows[0].offsetTop - rows[0].offsetHeight : 4;
+  row.classList.add("dragging"); row.parentElement.classList.add("sorting");
+  try { row.setPointerCapture(e.pointerId); } catch {}
+  navigator.vibrate?.(8);
+}
+function moveSort(y) {
+  const pr = panel.getBoundingClientRect();
+  if (y < pr.top + 44) panel.scrollTop -= 10; else if (y > pr.bottom - 44) panel.scrollTop += 10;   // scroll when dragging near an edge
+  const { rows, from, tops, hs } = sort, dy = y - sort.y0 + (panel.scrollTop - sort.s0), mid = tops[from] + hs[from] / 2 + dy;
+  let to = 0; for (let i = 0; i < rows.length; i++) if (i !== from && mid > tops[i] + hs[i] / 2) to++;
+  sort.to = to; sort.row.style.transform = `translateY(${dy}px)`;
+  const shift = hs[from] + sort.gap;
+  rows.forEach((r, i) => { if (i === from) return; r.style.transform = from < i && i <= to ? `translateY(${-shift}px)` : to <= i && i < from ? `translateY(${shift}px)` : ""; });
+}
+function endSort(cancel) {
+  const { row, rows, from, tops, hs } = sort, to = cancel ? from : sort.to; sort = null; suppressClick = Date.now();
+  const offset = to === from ? 0 : to > from ? tops[to] + hs[to] - tops[from] - hs[from] : tops[to] - tops[from];
+  const finish = () => {
+    row.parentElement?.classList.remove("sorting");
+    if (to !== from) { const list = [...state.layers].reverse(), [it] = list.splice(from, 1); list.splice(to, 0, it); state.layers = list.reverse(); commit(); markDirty(); }
+    renderPanel();
+  };
+  if (!motionOK()) { finish(); return; }
+  if (cancel) rows.forEach(r => { if (r !== row) r.style.transform = ""; });
+  row.style.transition = "transform .18s cubic-bezier(.2,.8,.2,1)"; row.style.transform = `translateY(${offset}px)`;
+  setTimeout(finish, 190);
+}
 document.addEventListener("pointermove", e => {
-  if (!reorder) return;
-  const rows = [...document.querySelectorAll(".light[data-id]")]; const over = rows.find(r => { const b = r.getBoundingClientRect(); return e.clientY >= b.top && e.clientY < b.bottom; });
-  if (!over || over.dataset.id === reorder.id) return;
-  const from = state.layers.findIndex(x => x.id === reorder.id), to = state.layers.findIndex(x => x.id === over.dataset.id);
-  const [it] = state.layers.splice(from, 1); state.layers.splice(to, 0, it); reorder.moved = true; renderPanel(); document.querySelector(`.light[data-id="${reorder.id}"]`)?.classList.add("dragging"); markDirty();
+  if (longPress && Math.hypot(e.clientX - longPress.x, e.clientY - longPress.y) > 8) { clearTimeout(longPress.t); longPress = null; }
+  if (sort) moveSort(e.clientY);
 });
 document.addEventListener("pointerup", e => {
-  if (reorder) { if (reorder.moved) commit(); reorder = null; renderPanel(); }
+  if (longPress) { clearTimeout(longPress.t); longPress = null; }
+  if (sort) endSort(false);
   if (swipe) { const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y; swipe = null; if (Math.abs(dx) > 50 && Math.abs(dy) < 40) switchLayer(dx < 0 ? 1 : -1); }
 });
+document.addEventListener("pointercancel", () => { if (longPress) { clearTimeout(longPress.t); longPress = null; } if (sort) endSort(true); swipe = null; });
+
+/* ── panel transitions ──
+   go(kind, change): apply a state change and re-render the sheet, animating between the two.
+   forward/back slide sideways (list ⇄ editor, light ⇄ light), up/down fade (bar ⇄ list),
+   section slides the tab content and moves the underline, expand opens a blur or mask part. */
+const SECTIONS = ["light", "blurs", "mask"], EASE = "cubic-bezier(.2,.8,.2,1)";
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+const motionOK = () => !reduceMotion.matches && typeof document.body.animate === "function";
+function morphSheet(change, dur = 300) {
+  const sh = $("#sheet");
+  if (!motionOK() || sh.hidden) { change(); return; }
+  const h0 = sh.offsetHeight; sh.getAnimations().forEach(a => a.cancel()); change(); const h1 = sh.offsetHeight;
+  if (Math.abs(h1 - h0) > 1) sh.animate([{ height: h0 + "px" }, { height: h1 + "px" }], { duration: dur, easing: EASE });
+}
+function go(kind, change) {
+  const sh = $("#sheet");
+  if (!motionOK() || kind === "none" || sh.hidden) { change(); renderPanel(); return; }
+  const oldSec = SECTIONS.indexOf(state.section), slide = { forward: 1, back: -1, up: 0, down: 0 }[kind];
+  let ghost = null;
+  if (slide !== undefined) {   // freeze a copy of the old contents to animate out
+    sh.querySelectorAll(".ghost").forEach(n => n.remove());
+    ghost = panel.cloneNode(true); ghost.removeAttribute("id"); ghost.classList.add("ghost"); ghost.setAttribute("aria-hidden", "true"); ghost.inert = true;
+    ghost.querySelectorAll("[id]").forEach(n => n.removeAttribute("id"));
+    Object.assign(ghost.style, { top: panel.offsetTop + "px", height: panel.offsetHeight + "px" });
+    const st = panel.scrollTop; sh.appendChild(ghost); ghost.scrollTop = st;
+  }
+  morphSheet(() => { change(); renderPanel(); if (ghost) panel.scrollTop = 0; });
+  if (slide) {
+    const dx = 48 * slide;
+    ghost.animate([{ transform: "none", opacity: 1 }, { transform: `translateX(${-dx}px)`, opacity: 0 }], { duration: 200, easing: EASE, fill: "forwards" }).finished.finally(() => ghost.remove());
+    panel.animate([{ transform: `translateX(${dx}px)`, opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 300, easing: EASE });
+  } else if (ghost) {
+    ghost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 150, fill: "forwards" }).finished.finally(() => ghost.remove());
+    panel.animate([{ opacity: 0, transform: `translateY(${kind === "up" ? 12 : -8}px)` }, { opacity: 1, transform: "none" }], { duration: 300, easing: EASE });
+  } else if (kind === "section") {
+    const ni = SECTIONS.indexOf(state.section), dir = Math.sign(ni - oldSec);
+    panel.querySelector(".sec")?.animate([{ opacity: 0, transform: `translateX(${28 * dir}px)` }, { opacity: 1, transform: "none" }], { duration: 260, easing: EASE });
+    panel.querySelector(".seg.tabs .ind")?.animate([{ transform: `translateX(${oldSec * 100}%)` }, { transform: `translateX(${ni * 100}%)` }], { duration: 280, easing: EASE });
+  } else if (kind === "expand") {
+    const body = panel.querySelector('.item[aria-current="true"] .body');
+    if (body) { const h = body.offsetHeight; body.style.overflow = "hidden";
+      body.animate([{ height: "0px", opacity: 0, paddingTop: "0px", paddingBottom: "0px" }, { height: h + "px", opacity: 1 }], { duration: 240, easing: EASE }).finished.finally(() => { body.style.overflow = ""; }); }
+  }
+}
+function arrive(ids) { // newly added lights fade into the list
+  if (!motionOK()) return;
+  ids.forEach((id, i) => panel.querySelector(`.light[data-id="${id}"]`)?.animate([{ opacity: 0, transform: "translateY(-10px)" }, { opacity: 1, transform: "none" }], { duration: 320, delay: 70 * i, easing: EASE, fill: "backwards" }));
+}
 
 $("#undo").onclick = undo; $("#redo").onclick = redo;
 addEventListener("keydown", e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") { e.preventDefault(); e.shiftKey ? redo() : undo(); } });
@@ -1063,11 +1182,12 @@ async function openPhoto(file) {
     const url = await readDataURL(file), img = await loadImage(url); const hadMasks = state.layers.some(l => l.mask.pieces.length);
     setDocument(img, url, file.name.replace(/\.[^.]+$/, ""));
     for (const l of state.layers) l.mask.pieces = [];
-    resetHistory(); fitView(); renderPanel(); markDirty();
+    resetHistory(); showEditor(); markDirty();
     toast(hadMasks ? "Photo opened. Lights carry over; their masks were cleared because they belonged to the old photo." : "Photo opened. Your lights carry over.", 3600);
   } catch (err) { toast(err.message); }
 }
-$("#openFile").addEventListener("change", async e => { const f = e.target.files[0]; e.target.value = ""; if (!f) return; if (/\.json$/i.test(f.name) || f.type === "application/json") openProject(f); else openPhoto(f); });
+function openAny(f) { if (/\.json$/i.test(f.name) || f.type === "application/json") openProject(f); else if (/^image\//.test(f.type) || /\.(jpe?g|png|webp)$/i.test(f.name)) openPhoto(f); else toast("Lumière opens JPEG, PNG and WebP photos, and Lumière project files."); }
+for (const id of ["#openFile", "#dropFile"]) $(id).addEventListener("change", e => { const f = e.target.files[0]; e.target.value = ""; if (f) openAny(f); });
 function b64(u8) { let s = ""; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); }
 function unb64(s) { const bin = atob(s), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
 function projectJSON() {
@@ -1083,7 +1203,7 @@ async function openProject(file) {
     const img = await loadImage(p.photo); setDocument(img, p.photo, p.document.name || "project");
     for (const k in p.images) { const im = await loadImage(p.images[k]), s = Math.min(1, 1024 / Math.max(im.naturalWidth, im.naturalHeight)); assets.set(k, { img: im, w: im.naturalWidth, h: im.naturalHeight, dataURL: p.images[k], tex: texFromImage(im, Math.round(im.naturalWidth * s), Math.round(im.naturalHeight * s)) }); }
     state.layers = p.layers.map(l => ({ ...l, id: uid(), mask: { ...l.mask, pieces: l.mask.pieces.map(x => ({ ...x, data: x.data ? unb64(x.data) : undefined })) } }));
-    state.activeId = state.layers.at(-1)?.id || null; state.ui = "list"; resetHistory(); fitView(); renderPanel(); markDirty(); toast("Project opened.");
+    state.activeId = state.layers.at(-1)?.id || null; state.ui = "list"; resetHistory(); showEditor(); markDirty(); toast("Project opened.");
   } catch (err) { toast(err.message || "That project could not be opened.", 4000); }
 }
 let downloads = null; (async () => { try { downloads = await window.claude?.use?.("downloads"); } catch { downloads = null; } })();
@@ -1105,17 +1225,30 @@ async function offer(filename, data, previewBlob) {
     a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 10000);
     toast("Saved " + filename); closeModal(); return;
   }
-  if (previewBlob) { const url = URL.createObjectURL(previewBlob); $("#modal").innerHTML = `<div class="card"><h3>Your export</h3><img class="result" src="${url}" alt="Exported photograph"><p class="hint">Saving files is not available in this view. On a phone, press and hold the image to save it.</p><button class="chip" data-close>Close</button></div>`; }
+  if (previewBlob) { const url = URL.createObjectURL(previewBlob); openModal(`<div class="card"><h3>Your export</h3><img class="result" src="${url}" alt="Exported photograph"><p class="hint">Saving files is not available in this view. On a phone, press and hold the image to save it.</p><button class="chip" data-close>Close</button></div>`); }
   else toast("Saving files is not available in this view.");
 }
-function closeModal() { $("#modal").hidden = true; $("#modal").innerHTML = ""; }
+let modalToken = 0;
+function openModal(html) {
+  const m = $("#modal"); modalToken++; m.getAnimations?.().forEach(a => a.cancel()); m.style.pointerEvents = ""; m.innerHTML = html; m.hidden = false;
+  if (motionOK()) { m.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, easing: "ease-out" }); m.querySelector(".card")?.animate([{ transform: "translateY(100%)" }, { transform: "none" }], { duration: 320, easing: EASE }); }
+}
+function closeModal() {
+  const m = $("#modal"); if (m.hidden) return; const t = ++modalToken;
+  const done = () => { if (t === modalToken) { m.hidden = true; m.innerHTML = ""; m.style.pointerEvents = ""; } };
+  m.style.pointerEvents = "none"; // a closing sheet never blocks the photo
+  if (!motionOK()) { done(); return; }
+  setTimeout(done, 260);
+  m.querySelector(".card")?.animate([{ transform: "none" }, { transform: "translateY(100%)" }], { duration: 220, easing: "cubic-bezier(.4,0,1,1)", fill: "forwards" });
+  m.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, fill: "forwards" }).finished.then(done, done);
+}
 $("#exportBtn").onclick = () => {
   const [W, H, s] = exportSize(), note = s < 1 ? ` (reduced from ${state.doc.w}×${state.doc.h}: browser limit)` : "";
-  $("#modal").innerHTML = `<div class="card"><h3>Export</h3><div class="opts">
+  openModal(`<div class="card"><h3>Export</h3><div class="opts">
     <button class="opt" data-exp="jpg"><span>Photograph<small>${W}×${H} px${note}</small></span><span class="fmt">JPEG</span></button>
     <button class="opt" data-exp="png"><span>Photograph, lossless<small>${W}×${H} px</small></span><span class="fmt">PNG</span></button>
     <button class="opt" data-exp="proj"><span>Editable project<small>Photo and every light with its blurs and masks</small></span><span class="fmt">JSON</span></button></div>
-    <p class="hint" id="expStatus"></p><button class="chip" data-close>Cancel</button></div>`; $("#modal").hidden = false;
+    <p class="hint" id="expStatus"></p><button class="chip" data-close>Cancel</button></div>`);
 };
 $("#modal").addEventListener("click", async e => {
   if (e.target.id === "modal" || e.target.closest("[data-close]")) { closeModal(); return; }
@@ -1157,17 +1290,35 @@ function sampleSubject() { // the generated flower's own outline, used for the s
 }
 
 /* ═════════════════════════ boot ═════════════════════════ */
+// After a photo or project opens: hide the drop zone, bring the sheet up, fit the photo above it.
+function showEditor() {
+  const first = state.ui === "none"; $("#drop").hidden = true; $("#drop").classList.remove("replace", "over");
+  if (first) state.ui = "list"; renderPanel(); fitView();
+  if (first && motionOK()) $("#sheet").animate([{ transform: "translateY(100%)" }, { transform: "none" }], { duration: 380, easing: EASE });
+}
+let dragDepth = 0;
+const hasFiles = e => [...(e.dataTransfer?.types || [])].includes("Files");
+addEventListener("dragenter", e => { if (!hasFiles(e)) return; e.preventDefault(); if (dragDepth++ === 0) { const d = $("#drop"); d.classList.add("over"); if (d.hidden) { d.classList.add("replace"); d.hidden = false; $("#dropTitle").textContent = "Drop to open"; $("#dropHint").textContent = "Your lights carry over to the new photo."; } } });
+addEventListener("dragover", e => { if (hasFiles(e)) e.preventDefault(); });
+addEventListener("dragleave", e => { if (!hasFiles(e)) return; if (--dragDepth <= 0) endDrag(); });
+addEventListener("drop", e => { if (!hasFiles(e)) return; e.preventDefault(); endDrag(); const f = e.dataTransfer.files[0]; if (f) openAny(f); });
+function endDrag() { dragDepth = 0; const d = $("#drop"); d.classList.remove("over"); if (d.classList.contains("replace")) { d.classList.remove("replace"); d.hidden = true; $("#dropTitle").textContent = "Add a photograph"; $("#dropHint").textContent = DROP_HINT; } }
+$("#trySample").onclick = () => loadSample().catch(err => toast(err.message));
+
+const DROP_HINT = matchMedia("(pointer: coarse)").matches ? "Choose a JPEG, PNG or WebP photo from your library." : "Drop a JPEG, PNG or WebP here, or click to choose one.";
 async function boot() {
-  resize();
+  $("#dropHint").textContent = DROP_HINT; resize(); $("#drop").hidden = false; renderPanel(); requestAnimationFrame(loop);
+}
+async function loadSample() {
   const url = makeSample().toDataURL("image/jpeg", 0.92), img = await loadImage(url); setDocument(img, url, "dahlia-sample");
   const subj = sampleSubject(), sm = (density = 1) => ({ pieces: [newPiece("subject", { invert: true, data: subj })], density, feather: 0.004, invert: false });
   const halo = makeLayer("Halo · 3200K", radialLight({ x: 0.36, y: 0.3, rx: 0.42, ry: 0.36, angle: -0.5, soft: 0.95 }), { opacity: 0.85, blurs: [radialBlur(0.35, 0.52, 0.4), gaussBlur(0.02)], mask: sm() });
   const win = makeLayer("Window beams", imageLight(await libraryAsset("window"), { x: 0.74, y: 0.14, scale: 0.42, angle: 0.15 }), { opacity: 0.7, blurs: [radialBlur(0.6, 1.12, -0.14)], mask: sm(0.6) });
-  state.layers = [halo, win]; state.activeId = win.id; state.ui = "list";
-  resetHistory(); renderPanel(); fitView(); requestAnimationFrame(loop);
-  toast("Sample photo with two lights. Tap a light to edit it, or open your own photo.", 4200);
+  state.layers = [halo, win]; state.activeId = win.id;
+  resetHistory(); showEditor(); markDirty();
+  toast("Sample photo with two lights. Tap a light to edit it.", 3600);
 }
-addEventListener("resize", () => { resize(); fitView(); });
+addEventListener("resize", () => { resize(); if (assets.has("base")) fitView(); });
 boot().catch(err => { document.body.insertAdjacentHTML("beforeend", `<div id="fatal"><p>${esc(err.message)}</p></div>`); console.error(err); });
 </script>
 </body>
