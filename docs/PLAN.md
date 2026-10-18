@@ -31,7 +31,8 @@ Five kinds: **Subject**, **Object**, **Brush**, **Radial gradient**, **Linear gr
 ## 2. Interface (phone first)
 
 - **Start:** an empty canvas with a drop zone. Drop a photo (desktop) or choose one from the
-  library (phone); "Or try a sample photo" loads a demo. The sheet slides up once a photo is open.
+  library (phone); "Try a sample photo" loads a demo, and the preset cards ask for a photo and
+  then apply that preset to it. The sheet slides up once a photo is open.
   Dropping a file onto the app later opens it as the new photo, keeping the lights.
 - The photograph fills the screen. The top bar holds the name, Undo, Redo, Open and Export.
 - One bottom sheet, three states:
@@ -39,10 +40,17 @@ Five kinds: **Subject**, **Object**, **Brush**, **Radial gradient**, **Linear gr
   2. **Lights list:** each row has a reorder handle, a thumbnail of that light alone, its name
      and a summary ("Screen · 70% · 2 blurs · mask"), and a show/hide eye. "+ New light" and
      "Presets" sit at the top. The photograph is shown at the bottom as never blurred or changed.
-  3. **Layer editor:** reached by tapping a light. The header has back, the light's name,
-     previous/next light (or swipe the header), and show/hide. Opacity and blend mode are always
-     visible. Three tabs: **Light**, **Blurs**, **Mask**. At the bottom: Show this light alone,
-     Duplicate, Delete.
+  3. **Layer editor:** reached by tapping a light. Row one of the header: back, the light's
+     name with "2 of 3" (swipe the header for the next light), "show this light alone", and a ⋯
+     menu with Rename, Duplicate, Hide, Light above, Light below and Delete. Row two: Opacity and
+     a blend-mode menu, always visible. Three tabs: **Light** (color swatches, Softness, then
+     Gradient/Image and Redraw), **Blurs** and **Mask** (each part is an accordion; one "Add"
+     button opens a menu of kinds). Settings that stay on are switches (Fine drag, Show mask,
+     Invert); one-off actions are buttons.
+- **Design system:** every control comes from `design-system/styles.css` ("Darkroom": graphite
+  surfaces, a safelight orange-red accent, Manrope, IBM Plex Sans and IBM Plex Mono). Every
+  touch target is at least 44 px; the smoke test checks this. Double-tap a slider to reset it.
+  The sheet has two heights: tap or swipe its grabber.
 - **Reordering:** drag the handle on the left of a row, or long-press anywhere on the row and
   drag. Other rows move aside as you drag; the list scrolls when you reach its edge.
 - **Transitions:** the sheet's height eases between states; list ⇄ editor and light ⇄ light

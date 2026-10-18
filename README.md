@@ -30,6 +30,15 @@ one from your library (or try the sample). Lights are listed top to bottom; reor
 dragging the handle on the left, or by long-pressing a row. Tap a light to open its editor. The
 sheet slides between the list and the editor, and between lights, so you keep your place.
 
+**The editor** has a two-row header: back, the light's name, "show this light alone", and a ⋯
+menu (Rename, Duplicate, Hide, Light above or below, Delete); then Opacity next to a blend-mode
+menu. Below are the Light, Blurs and Mask tabs, each with its main controls first. Blurs and mask
+parts open as accordions and are added from one "Add" menu each. Double-tap any slider to reset
+it; tap or swipe the sheet's grabber for a taller panel.
+
+**Look and feel.** The interface is built from the "Darkroom" design system in
+`design-system/` (tokens, components and icons); the app page adds only layout.
+
 **Also:** undo/redo for every change, pinch to zoom, export to JPEG or PNG at full resolution
 (up to about 16.7 megapixels, a browser limit for now), and editable project files (`.lumiere.json`).
 
@@ -45,7 +54,8 @@ python3 -m http.server 8080      # or: npm start
 Then open <http://localhost:8080>. To try it on a phone, open the same address from the phone
 using your computer's local IP address, or host the folder on any static host.
 
-The app loads TensorFlow.js from jsDelivr and its fonts from Google Fonts. The selection model
+The app loads TensorFlow.js from jsDelivr, its fonts from Google Fonts, and its styles from
+`design-system/styles.css`. The selection model
 (`models/u2netp.json`, about 3 MB) is downloaded the first time someone uses Select Subject,
 Select Object or a preset.
 
@@ -54,7 +64,7 @@ Select Object or a preset.
 ```sh
 npm install
 npx playwright install chromium
-npm test                    # start screen, opening a photo, reordering (mouse and touch), editor, drawing, undo
+npm test                    # start screen, opening a photo, reordering (mouse and touch), editor and its menus, 44 px targets, drawing, undo
 npm run test:selection      # also runs AI subject selection (slow without a GPU)
 ```
 

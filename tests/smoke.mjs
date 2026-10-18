@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
-const types = { ".html": "text/html", ".json": "application/json", ".js": "text/javascript" };
+const types = { ".html": "text/html", ".json": "application/json", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml" };
 const server = createServer(async (req, res) => {
   let path = normalize(join(root, decodeURIComponent(new URL(req.url, "http://x").pathname)));
   if (!path.startsWith(root)) { res.writeHead(403).end(); return; }
@@ -36,6 +36,7 @@ try {
   check(await page.isVisible("#drop .dz"), "app opens on an empty canvas with a drop zone");
   check(await page.isHidden("#sheet"), "no editing panel before a photo is open");
   check(await page.isDisabled("#exportBtn"), "Export is disabled before a photo is open");
+  check(await page.locator("#startPresets [data-start-preset]").count() >= 4, "the start screen offers presets");
 
   // Open a photo through the drop zone's file input (a generated PNG).
   const png = Buffer.from(await page.evaluate(() => { const c = document.createElement("canvas"); c.width = 640; c.height = 480; const g = c.getContext("2d");
@@ -49,12 +50,12 @@ try {
   // The sample, for a document with lights.
   await page.goto(url); await page.click("#trySample");
   await page.waitForFunction(() => typeof state !== "undefined" && state.layers.length === 2, null, { timeout: 60000 }).catch(() => {});
-  check(await page.locator(".light").count() === 2, "sample photo loads with two lights in the list");
+  check(await page.locator(".layer-row[data-id]").count() === 2, "sample photo loads with two lights in the list");
   check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "no horizontal scrolling at phone width");
 
   // Reorder with a mouse: drag the top light's handle below the second.
   const before = await order(page);
-  const grip = await page.locator(".light .grip").first().boundingBox(), rowH = (await page.locator(".light").first().boundingBox()).height;
+  const grip = await page.locator(".layer-row .grip").first().boundingBox(), rowH = (await page.locator(".layer-row[data-id]").first().boundingBox()).height;
   await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2); await page.mouse.down();
   await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2 + rowH * 1.2, { steps: 8 }); await page.mouse.up(); await page.waitForTimeout(400);
   const after = await order(page);
@@ -69,7 +70,7 @@ try {
   await touch("touchStart", gx, gy); for (let i = 1; i <= 8; i++) await touch("touchMove", gx, gy + rowH * 1.2 * i / 8); await touch("touchEnd"); await page.waitForTimeout(400);
   check(await order(page) === after, "dragging the handle with a finger reorders the lights");
   await page.click("#undo"); await page.waitForTimeout(100);
-  const nm = await page.locator(".light .name").first().boundingBox(), nx = nm.x + nm.width / 2, ny = nm.y + nm.height / 2;
+  const nm = await page.locator(".layer-row[data-id] .name").first().boundingBox(), nx = nm.x + nm.width / 2, ny = nm.y + nm.height / 2;
   await touch("touchStart", nx, ny); await page.waitForTimeout(600); for (let i = 1; i <= 8; i++) await touch("touchMove", nx, ny + rowH * 1.2 * i / 8); await touch("touchEnd"); await page.waitForTimeout(500);
   check(await order(page) === after && await page.locator(".ed-head").count() === 0, "long-pressing a row and dragging reorders without opening the editor");
   await page.click("#undo"); await page.waitForTimeout(100);
@@ -78,9 +79,28 @@ try {
   await page.click('[data-act="edit"] >> nth=0');
   check(await page.locator(".ed-head").count() === 1, "tapping a light opens its editor");
   check(await page.evaluate(() => document.querySelectorAll("#sheet .ghost").length + document.getAnimations().length > 0), "opening the editor animates");
-  for (const s of ["blurs", "mask", "light"]) { await page.click(`[data-seg="section"][data-val="${s}"]`); check(await page.locator(`[data-seg="section"][data-val="${s}"][aria-pressed="true"]`).count() === 1, `${s} tab opens`); }
+  for (const s of ["blurs", "mask", "light"]) { await page.click(`[data-seg="section"][data-val="${s}"]`); check(await page.locator(`[data-seg="section"][data-val="${s}"][aria-selected="true"]`).count() === 1, `${s} tab opens`); }
   await page.waitForTimeout(400);
   check(await page.locator("#sheet .ghost").count() === 0, "transition copies are cleaned up");
+
+  // Editor controls: blend menu, the ⋯ menu (rename), add-blur menu, slider double-tap reset, taller panel.
+  const active = () => page.evaluate(() => state.layers.find(x => x.id === state.activeId));
+  await page.click('[data-act="blend-menu"]'); await page.click('#pop [data-act="blend"][data-val="lighten"]');
+  check((await active()).blend === "lighten" && await page.isHidden("#pop"), "the blend menu changes the blend mode");
+  await page.click('[data-act="more"]'); check(await page.locator('#pop [data-act="del-layer"]').count() === 1, "the ⋯ menu offers rename, duplicate and delete");
+  await page.click('#pop [data-act="rename"]'); await page.fill("#renameInput", "Key light"); await page.press("#renameInput", "Enter"); await page.waitForTimeout(350);
+  check((await active()).name === "Key light" && (await page.textContent(".ed-head .t-h5")) === "Key light", "a light can be renamed");
+  await page.click('[data-seg="section"][data-val="blurs"]'); const nb = (await active()).blurs.length;
+  await page.click('[data-act="add-blur-menu"]'); await page.click('#pop [data-act="add-gauss-blur"]');
+  check((await active()).blurs.length === nb + 1, "the Add blur menu adds a blur");
+  await page.dblclick("#s-opacity"); check(Math.abs((await active()).opacity - 0.8) < 1e-9, "double-tapping a slider resets it");
+  const h0 = (await page.locator("#sheet").boundingBox()).height; await page.click("#grab"); await page.waitForTimeout(400);
+  check((await page.locator("#sheet").boundingBox()).height > h0 && await page.evaluate(() => state.tall), "the grabber makes the panel taller");
+  await page.click("#grab"); await page.waitForTimeout(400);
+  check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "no horizontal scrolling in the editor");
+  const small = await page.evaluate(() => [...document.querySelectorAll("#sheet button, #top button")].filter(b => b.offsetParent && !b.closest(".ghost") && b.id !== "grab") /* the grabber is a full-width strip */.map(b => { const r = b.getBoundingClientRect(), cs = getComputedStyle(b, "::before");
+    const slop = cs.content !== "none" && cs.position === "absolute" ? Math.max(0, -parseFloat(cs.top) || 0) * 2 : 0; return [b.dataset.act || b.id || b.className, Math.round(r.width), Math.round(r.height + slop)]; }).filter(([, w, h]) => w < 44 || h < 44));
+  check(small.length === 0, "every button in the editor is at least 44 px" + (small.length ? ": " + JSON.stringify(small) : ""));
 
   // Draw a new radial light (a new gradient starts at size 0.3; drawing must change it).
   await page.click('[data-act="to-list"]'); await page.waitForTimeout(350); await page.click('[data-act="new-light"]'); await page.click('[data-new="radial"]'); await page.waitForTimeout(400);
@@ -90,7 +110,7 @@ try {
   await page.click("#undo"); check(await page.evaluate(() => state.layers.length === 3), "undo works");
 
   if (process.argv.includes("--selection")) {
-    await page.click('[data-seg="section"][data-val="mask"]'); await page.click('[data-act="add-piece"][data-val="subject"]');
+    await page.click('[data-seg="section"][data-val="mask"]'); await page.click('[data-act="add-piece-menu"]'); await page.click('#pop [data-act="add-piece"][data-val="subject"]');
     await page.waitForFunction(() => /Done in|failed|could not/i.test(document.querySelector("#toast").textContent), null, { timeout: 600000 });
     check(await page.evaluate(() => { const l = state.layers.find(x => x.id === state.activeId); return !!l.mask.pieces.at(-1).data; }), "Select Subject fills a mask");
   }

@@ -3,227 +3,238 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0d0c12">
+<meta name="theme-color" content="#12100F">
 <meta name="description" content="Lumière by Les Fleurs de la Nuit: add and shape light in your photographs, on your phone.">
 <title>Lumière</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<!-- Tokens and components come from the "Darkroom" design system; this page adds layout only. -->
+<link rel="stylesheet" href="design-system/styles.css">
 <style>
-body { margin: 0; } [hidden] { display: none !important; }
 /* Layout: the photograph fills the screen. One bottom sheet moves between three states:
    a small bar → the list of lights → the editor for one light. */
-:root {
-  --ink: #0d0c12;
-  --surface: #17151d;
-  --raise: #221f2a;
-  --line: #2f2b39;
-  --text: #ece6f1;
-  --muted: #9d95aa;
-  --tungsten: #f2b56b;
-  --tungsten-ink: #1c1306;
-  --mask: #f0506e;
-  --f-ui: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --f-num: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --f-mark: "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
-  --gutter-l: max(16px, env(safe-area-inset-left, 0px));
-  --gutter-r: max(16px, env(safe-area-inset-right, 0px));
-  color-scheme: dark;
-}
-*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { height: 100%; overflow: hidden; }
-body { background: var(--ink); color: var(--text); font-family: var(--f-ui); font-size: 14px; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+body { background: var(--bg); color: var(--text); font: 400 14px/1.4 var(--font-body); -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
+  --gl: max(var(--sp-16), env(safe-area-inset-left, 0px)); --gr: max(var(--sp-16), env(safe-area-inset-right, 0px)); }
+button, input { font: inherit; color: inherit; }
+button { background: none; border: 0; cursor: pointer; text-align: inherit; }
+input { -webkit-user-select: text; user-select: text; }
+.vh { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; clip-path: inset(50%); }
 canvas.stage { position: fixed; inset: 0; width: 100%; height: 100%; touch-action: none; display: block; }
 #ov { pointer-events: none; }
-button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
-button:focus-visible, input:focus-visible, label.btn:focus-within { outline: 2px solid var(--tungsten); outline-offset: 2px; }
-svg.i { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 
-#top { position: fixed; top: 0; left: 0; right: 0; z-index: 5; display: flex; align-items: center; gap: 4px;
-  padding-top: calc(env(safe-area-inset-top, 0px) + 6px); padding-bottom: 6px; padding-left: var(--gutter-l); padding-right: var(--gutter-r);
-  background: linear-gradient(var(--ink), color-mix(in srgb, var(--ink) 0%, transparent)); }
-#mark { margin-right: auto; display: grid; line-height: 1; gap: 3px; min-width: 0; }
-#mark b { font-family: var(--f-mark); font-style: italic; font-weight: 500; font-size: 24px; color: var(--tungsten); white-space: nowrap; }
-#mark small { font-size: 10px; letter-spacing: .02em; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.icon { width: 36px; height: 40px; display: grid; place-items: center; border-radius: 10px; }
-.icon svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-.icon:disabled { opacity: .35; cursor: default; }
-#exportBtn { height: 36px; padding: 0 13px; border-radius: 18px; background: var(--tungsten); color: var(--tungsten-ink); font-weight: 600; margin-left: 6px; }
+/* top bar */
+#top { position: fixed; top: 0; left: 0; right: 0; z-index: var(--z-appbar); height: calc(var(--appbar-h) + env(safe-area-inset-top, 0px));
+  padding: env(safe-area-inset-top, 0px) max(var(--sp-4), env(safe-area-inset-right, 0px)) 0 max(var(--sp-12), env(safe-area-inset-left, 0px)); }
+#mark { display: grid; gap: 1px; line-height: 1; }
+#mark small { font: 400 10px var(--font-body); letter-spacing: .02em; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#exportBtn { margin: 0 var(--sp-4) 0 var(--sp-4); }
 
-.float { position: fixed; z-index: 4; top: calc(env(safe-area-inset-top, 0px) + 56px); font: 500 11px/1 var(--f-num); border-radius: 12px; padding: 6px 9px; }
-#perf { left: var(--gutter-l); color: var(--muted); background: color-mix(in srgb, var(--ink) 78%, transparent); border: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+/* floating readouts and the snackbar */
+.float { position: fixed; z-index: var(--z-fab); top: calc(env(safe-area-inset-top, 0px) + var(--appbar-h) + var(--sp-4)); font: 500 11px/1 var(--font-mono); border-radius: var(--r-md); padding: var(--sp-8); }
+#perf { left: var(--gl); color: var(--text-secondary); background: color-mix(in srgb, var(--bg) 82%, transparent); box-shadow: var(--elev-1); font-variant-numeric: tabular-nums; }
 #perf b { color: var(--text); font-weight: 500; }
-#perf.good b.fps { color: #8fd694; } #perf.ok b.fps { color: var(--tungsten); } #perf.slow b.fps { color: var(--mask); }
-#soloTag { right: var(--gutter-r); color: var(--tungsten-ink); background: var(--tungsten); }
+#perf.good b.fps { color: var(--success); } #perf.ok b.fps { color: var(--warning); } #perf.slow b.fps { color: var(--error); }
+#soloTag { right: var(--gr); background: var(--primary-container); color: var(--on-primary-container); }
+#toast { position: fixed; z-index: var(--z-snackbar); left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + var(--appbar-h) + var(--sp-8)); max-width: min(420px, calc(100% - 32px)); }
+#toast.plain { padding-right: var(--sp-16); }
 
-#sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; overflow: hidden; background: var(--surface); border-top: 1px solid var(--line);
-  border-radius: 18px 18px 0 0; padding-bottom: env(safe-area-inset-bottom, 0px); box-shadow: 0 -12px 40px rgb(0 0 0 / .35); }
-#panel, .ghost { max-height: min(48vh, 400px); overflow-y: auto; overscroll-behavior: contain; padding: 0 var(--gutter-r) 12px var(--gutter-l); display: grid; gap: 12px; }
+/* the sheet */
+#sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-drawer); overflow: hidden; padding-bottom: env(safe-area-inset-bottom, 0px); }
+#grab { display: block; width: 100%; height: 24px; touch-action: none; cursor: grab; }
+#grab .grabber { margin: var(--sp-8) auto 0; }
+#panel, .ghost { max-height: min(46vh, 400px); overflow-y: auto; overscroll-behavior: contain; padding: 0 var(--gr) var(--sp-12) var(--gl); display: grid; gap: var(--sp-12); align-content: start; }
+#sheet.tall #panel, #sheet.tall .ghost { max-height: min(74vh, 680px); }
 #sheet.peek #panel { display: none; }
-#peek { padding: 12px var(--gutter-r) 12px var(--gutter-l); font: 500 12px var(--f-num); color: var(--muted); font-variant-numeric: tabular-nums; }
-#peek b { color: var(--tungsten); font-weight: 500; }
-
-.sticky { position: sticky; top: 0; z-index: 2; background: var(--surface); padding-top: 12px; display: grid; gap: 10px; }
-.row { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.row.between { justify-content: space-between; }
-.grow { flex: 1; min-width: 0; }
-h2 { font-size: 15px; font-weight: 600; margin: 0; }
-.hint { color: var(--muted); font-size: 12.5px; line-height: 1.45; margin: 0; max-width: 62ch; }
-.note { font-size: 12px; color: var(--muted); border-left: 2px solid var(--line); padding-left: 10px; margin: 0; line-height: 1.45; }
-.label { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-
-.bar { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding-top: 10px; }
-.bar button { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-radius: 12px; background: var(--raise); font-weight: 500; }
-.bar .count { font: 500 12px var(--f-num); color: var(--muted); margin-left: auto; }
-
-.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--raise); border-radius: 10px; padding: 3px; gap: 2px; }
-.seg button { padding: 8px 4px; border-radius: 8px; font-size: 13px; font-weight: 500; color: var(--muted); white-space: nowrap; }
-.seg button[aria-pressed="true"] { background: var(--surface); color: var(--text); }
-.seg.small button { padding: 6px 2px; font-size: 12px; }
-.seg.tabs { background: none; padding: 0; border-bottom: 1px solid var(--line); border-radius: 0; }
-.seg.tabs button { border-radius: 0; padding: 10px 4px; border-bottom: 2px solid transparent; }
-.seg.tabs button[aria-pressed="true"] { background: none; color: var(--tungsten); }
-.seg.tabs small { font: 500 11px var(--f-num); color: var(--muted); margin-left: 4px; }
-
-.slider { display: grid; gap: 4px; }
-.slider .row { justify-content: space-between; font-size: 13px; }
-.slider output { font: 500 12px var(--f-num); font-variant-numeric: tabular-nums; color: var(--muted); }
-input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 28px; background: transparent; margin: 0; touch-action: pan-x; }
-input[type=range]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: var(--line); }
-input[type=range]::-moz-range-track { height: 4px; border-radius: 2px; background: var(--line); }
-input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; margin-top: -10px; border-radius: 50%; background: var(--text); border: 3px solid var(--surface); box-shadow: 0 0 0 1px var(--line); }
-input[type=range]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--text); border: 3px solid var(--surface); }
-.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px 18px; }
-
-.chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.chip, label.btn { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 9px 12px; border-radius: 10px; background: var(--raise); font-size: 13px; font-weight: 500; white-space: nowrap; }
-.chip[aria-pressed="true"] { background: color-mix(in srgb, var(--tungsten) 18%, var(--raise)); color: var(--tungsten); }
-.chip.primary { background: var(--tungsten); color: var(--tungsten-ink); font-weight: 600; }
-.chip.danger { color: var(--mask); }
-.chip:disabled { opacity: .5; cursor: progress; }
-.chip.small { padding: 6px 9px; font-size: 12px; }
-label.btn input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-.readout { font: 500 12px var(--f-num); font-variant-numeric: tabular-nums; color: var(--muted); }
-.readout b { color: var(--tungsten); font-weight: 500; }
-
-.swatches { display: flex; flex-wrap: wrap; gap: 8px; }
-.sw { display: grid; justify-items: center; gap: 4px; font: 500 10.5px var(--f-num); color: var(--muted); }
-.sw i { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line); }
-.sw[aria-pressed="true"] i { box-shadow: 0 0 0 2px var(--tungsten); }
-.sw input { width: 32px; height: 32px; border: 0; padding: 0; border-radius: 50%; background: none; }
-.sw input::-webkit-color-swatch-wrapper { padding: 0; } .sw input::-webkit-color-swatch { border-radius: 50%; border: 2px solid var(--surface); }
+#peek { padding: var(--sp-8) var(--gr) var(--sp-16) var(--gl); }
+#peek b { color: var(--primary); font-weight: 500; }
+.ghost { position: absolute; left: 0; right: 0; pointer-events: none; overflow: hidden; }
+.sticky { position: sticky; top: 0; z-index: 2; background: var(--paper); display: grid; gap: var(--sp-4); padding-bottom: var(--sp-4); }
+.tabpanel { display: grid; gap: var(--sp-12); align-content: start; }
+.bar { display: grid; grid-template-columns: 1fr auto; gap: var(--sp-8); padding-top: var(--sp-4); }
+.bar .btn { justify-content: flex-start; }
+.bar .count { margin-left: auto; }
 
 /* light list */
-.lights { display: grid; gap: 4px; }
-.light { display: grid; grid-template-columns: 36px 52px minmax(0,1fr) auto; align-items: center; gap: 8px; padding: 4px; border-radius: 12px; }
-.grip { width: 36px; height: 48px; display: grid; place-items: center; color: var(--muted); touch-action: none; cursor: grab; }
-.thumb { pointer-events: none; -webkit-touch-callout: none; width: 52px; height: 52px; border-radius: 8px; background: #000; border: 1px solid var(--line); object-fit: cover; display: block; }
-.light .name { text-align: left; min-width: 0; padding: 6px 0; }
-.light .name b { display: block; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.light .name small { color: var(--muted); font-size: 11.5px; }
-.eye { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 8px; color: var(--muted); }
-.eye[aria-pressed="false"] { opacity: .4; }
-.photo-row { display: grid; grid-template-columns: 36px 52px minmax(0,1fr) auto; gap: 8px; align-items: center; padding: 4px; color: var(--muted); }
+#lights { display: grid; gap: var(--sp-4); }
+.layer-row { position: relative; transition: transform var(--dur-shorter) var(--ease); }
+.layer-row.dragging { transition: none; z-index: 3; }
+#lights.sorting { touch-action: none; }
+.layer-row .thumb { display: block; object-fit: cover; pointer-events: none; -webkit-touch-callout: none; }
+.layer-row .name { min-width: 0; min-height: var(--target); padding: var(--sp-8) 0; text-align: left; -webkit-touch-callout: none; }
+.layer-row .name > span, .opts .pri, .opts .sec { display: block; }
+.base-row { grid-template-columns: var(--target) 48px minmax(0, 1fr) auto; background: transparent; }
+.base-row .dims { display: grid; place-items: center; text-align: center; font-size: 10px; }
 
 /* editor */
-.ed-head { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 6px; touch-action: pan-y; }
-.back { display: inline-flex; align-items: center; gap: 2px; padding: 8px 8px 8px 0; color: var(--muted); font-weight: 500; }
-.ed-title { display: flex; align-items: center; justify-content: center; gap: 4px; min-width: 0; }
-.ed-title b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ed-title .pos { font: 500 11px var(--f-num); color: var(--muted); white-space: nowrap; }
-.nav { width: 30px; height: 34px; display: grid; place-items: center; color: var(--muted); border-radius: 8px; }
-.nav:disabled { opacity: .25; }
+.ed-head { display: grid; grid-template-columns: var(--target) minmax(0, 1fr) var(--target) var(--target); align-items: center; margin: 0 calc(var(--sp-8) * -1); touch-action: pan-y; }
+.ed-head .ttl { min-width: 0; padding: 0 var(--sp-4); }
+.ed-head .t-h5, .ed-head .t-mono { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ed-head .t-mono { font-size: 11px; }
+.q { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: var(--sp-12); }
+.q .chip { margin-bottom: 6px; }
+.tab { position: relative; }
 
-.items { display: grid; gap: 6px; }
-.item { border-radius: 12px; background: var(--raise); }
-.item > .row { padding: 6px 6px 6px 12px; min-height: 46px; }
-.item[aria-current="true"] { box-shadow: 0 0 0 1px var(--tungsten); }
-.item .what { text-align: left; flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 6px 0; }
-.item .what span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.item .what small { color: var(--muted); font: 500 11px var(--f-num); }
-.item .tool { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 8px; color: var(--muted); }
-.item .tool:disabled { opacity: .25; }
-.item .tool[aria-pressed="false"] { opacity: .45; }
-.item .body { padding: 2px 12px 12px; display: grid; gap: 10px; border-top: 1px solid var(--line); padding-top: 10px; }
-.mode { display: inline-grid; grid-auto-flow: column; background: var(--surface); border-radius: 8px; padding: 2px; }
-.mode button { padding: 4px 7px; font: 500 11px var(--f-num); color: var(--muted); border-radius: 6px; }
-.mode button[aria-pressed="true"] { background: var(--raise); color: var(--text); }
-.base-tag { font: 500 11px var(--f-num); color: var(--muted); padding: 4px 7px; }
+/* sliders: the design-system slider drawn over a native range input (keyboard, touch, screen readers) */
+.slider .rail input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; -webkit-appearance: none; appearance: none; touch-action: pan-y; }
+.slider .rail input::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 44px; }
+.slider .rail input::-moz-range-thumb { width: 20px; height: 44px; border: 0; }
+.slider .fill { left: 0; width: calc(10px + (100% - 20px) * var(--p, 0)); }
+.slider .thumb { left: calc(10px + (100% - 20px) * var(--p, 0)); transition: box-shadow var(--dur-fast) var(--ease); }
+.slider:focus-within .thumb, .slider .rail:active .thumb { box-shadow: 0 0 0 4px var(--paper), 0 0 0 8px var(--action-focus); }
+.slider .head output { color: var(--text-secondary); }
 
-.libs { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 6px; }
-.libs button, .libs label { display: grid; gap: 4px; font-size: 11px; color: var(--muted); text-align: center; position: relative; }
-.libs img, .libs .add { width: 100%; aspect-ratio: 1; border-radius: 8px; border: 1px solid var(--line); background: #000; object-fit: cover; display: grid; place-items: center; }
-.libs [aria-pressed="true"] img { box-shadow: 0 0 0 2px var(--tungsten); }
-.libs label input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.switch.line { display: flex; width: 100%; justify-content: space-between; gap: var(--sp-12); text-align: left; }
+.btn[aria-pressed="true"] { background: var(--primary-container); color: var(--on-primary-container); }
+.addbtn { justify-self: start; }
+.toggle { position: relative; } .toggle::before { content: ""; position: absolute; inset: -2px 0; } /* 40px toggles inside a 2px track: the track counts toward the 44px target */
+.t-mono b { color: var(--warning); font-weight: 500; }
+.swatch { position: relative; }
+.swatch.custom i { background: conic-gradient(from 90deg, #ff6b6b, #ffd36b, #7bf0a0, #6bc8ff, #b48bff, #ff6b6b); }
+.swatch.custom.on i { background: var(--sw); box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--primary); }
+.swatch.custom input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.swatch:focus-within { box-shadow: var(--focus-ring); border-radius: var(--r-md); }
+.libs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--sp-8); }
+.libs > * { position: relative; display: grid; gap: var(--sp-4); font: 500 11px var(--font-body); color: var(--text-secondary); text-align: center; cursor: pointer; }
+.libs img, .libs .add { width: 100%; aspect-ratio: 1; border-radius: var(--r-md); background: var(--sunken); object-fit: cover; display: grid; place-items: center; box-shadow: inset 0 0 0 1px var(--hairline); }
+.libs [aria-pressed="true"] { color: var(--text); }
+.libs [aria-pressed="true"] img { box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--primary); }
+.libs label:focus-within .add { box-shadow: var(--focus-ring); }
+.accordion .sum { cursor: default; }
+.accordion .what { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-8); min-height: var(--target); text-align: left; }
+.accordion .what .t { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font: 500 14px var(--font-body); color: var(--text); }
+.accordion .what .ico:first-child { color: var(--text-secondary); }
+.det-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-4); }
 
-#toast { position: fixed; z-index: 9; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 58px); max-width: calc(100% - 32px);
-  background: var(--raise); border: 1px solid var(--line); padding: 9px 14px; border-radius: 12px; font-size: 13px; }
-#modal { position: fixed; inset: 0; z-index: 8; background: rgb(5 4 8 / .72); display: grid; place-items: end center; }
-#modal .card { width: min(560px, 100%); max-height: 86vh; overflow-y: auto; background: var(--surface); border-radius: 18px 18px 0 0; border-top: 1px solid var(--line);
-  padding: 18px var(--gutter-r) calc(env(safe-area-inset-bottom, 0px) + 18px) var(--gutter-l); display: grid; gap: 14px; }
-#modal h3 { margin: 0; font-size: 16px; font-weight: 600; }
-#modal .opts { display: grid; gap: 8px; }
-#modal .opt { display: grid; grid-template-columns: 1fr auto; align-items: center; text-align: left; padding: 12px 14px; border-radius: 12px; background: var(--raise); }
-#modal .opt small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
-#modal .opt span.fmt { font: 500 12px var(--f-num); color: var(--tungsten); }
-.presets { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
-.preset { display: grid; gap: 8px; text-align: left; padding: 8px; border-radius: 14px; background: var(--raise); }
-.preset i { display: block; aspect-ratio: 4/3; border-radius: 9px; border: 1px solid var(--line); }
-.preset b { font-weight: 600; font-size: 13.5px; } .preset small { display: block; color: var(--muted); font-size: 12px; line-height: 1.35; margin-top: 2px; }
-.preset .tag { font: 500 10.5px var(--f-num); color: var(--muted); }
-#modal img.result { max-width: 100%; max-height: 50vh; justify-self: center; border-radius: 8px; -webkit-user-select: auto; user-select: auto; -webkit-touch-callout: default; }
-.sec { display: grid; gap: 12px; }
-.ghost { position: absolute; left: 0; right: 0; pointer-events: none; overflow: hidden; }
-.seg.tabs { position: relative; }
-.seg.tabs .ind { position: absolute; left: 0; bottom: -1px; width: calc(100% / 3); height: 2px; border-radius: 2px; background: var(--tungsten); }
-.light { position: relative; background: var(--surface); transition: transform .2s cubic-bezier(.2,.8,.2,1); }
-.light.dragging { transition: none; z-index: 3; background: var(--raise); box-shadow: 0 12px 28px rgb(0 0 0 / .5), 0 0 0 1px var(--tungsten); }
-.lights.sorting { touch-action: none; }
-#exportBtn:disabled { opacity: .35; cursor: default; }
-#drop { position: fixed; z-index: 3; left: 0; right: 0; top: calc(env(safe-area-inset-top, 0px) + 56px); bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
-  display: grid; align-content: center; justify-items: center; gap: 12px; padding: 0 var(--gutter-r) 0 var(--gutter-l); }
-#drop .dz { position: relative; width: min(440px, 100%); display: grid; justify-items: center; gap: 10px; text-align: center; padding: 44px 24px 36px; border-radius: 22px; cursor: pointer;
-  border: 1.5px dashed color-mix(in srgb, var(--tungsten) 45%, var(--line)); background: color-mix(in srgb, var(--surface) 70%, transparent); transition: border-color .2s, background-color .2s, transform .2s; }
-#drop .dz svg { width: 46px; height: 46px; stroke: var(--tungsten); fill: none; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; margin-bottom: 4px; }
-#drop .dz b { font-size: 18px; font-weight: 600; }
-#drop .dz .hint { max-width: 32ch; }
-#drop .dz .chip { margin-top: 8px; }
-#drop .dz input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-#drop .dz:hover, #drop.over .dz { border-color: var(--tungsten); background: color-mix(in srgb, var(--tungsten) 9%, var(--surface)); }
+/* menus */
+#pop { position: fixed; z-index: 1350; max-height: 62vh; overflow-y: auto; }
+#pop .mi { width: 100%; text-align: left; }
+#pop .mi[disabled] { color: var(--text-disabled); cursor: default; }
+#pop .mi[disabled] .ico { color: var(--text-disabled); }
+#pop .mi .ok { color: var(--primary); margin-left: auto; }
+
+/* modal sheets */
+#modal { position: fixed; inset: 0; z-index: var(--z-modal); background: var(--scrim); display: grid; place-items: end center; }
+.mcard { width: min(560px, 100%); max-height: 86vh; overflow-y: auto; padding: 0 var(--gr) calc(env(safe-area-inset-bottom, 0px) + var(--sp-12)) var(--gl); display: grid; gap: var(--sp-12); }
+.mcard .actions { display: flex; justify-content: flex-end; gap: var(--sp-8); }
+.opts .list-item { width: 100%; text-align: left; }
+.opts .list-item > .ico { color: var(--primary); }
+.opts .list-item > .t-mono { color: var(--primary); }
+.preset { display: grid; align-content: start; width: 100%; text-align: left; }
+.preset .media { display: block; aspect-ratio: 16 / 10; }
+.preset .content { display: grid; gap: 2px; padding: var(--sp-8) 10px 10px; }
+.field .ctl input { flex: 1; min-width: 0; height: var(--target); background: none; border: 0; outline: 0; }
+.field input:focus-visible { box-shadow: none; }
+.field:focus-within .ctl { box-shadow: inset 0 -2px 0 var(--primary); }
+.field:focus-within .lbl { color: var(--primary); }
+img.result { max-width: 100%; max-height: 50vh; justify-self: center; border-radius: var(--r-md); -webkit-user-select: auto; user-select: auto; -webkit-touch-callout: default; }
+
+/* start screen */
+#drop { position: fixed; z-index: var(--z-fab); left: 0; right: 0; top: calc(env(safe-area-inset-top, 0px) + var(--appbar-h)); bottom: 0; overflow-y: auto; overscroll-behavior: contain;
+  padding: 0 var(--gr) calc(env(safe-area-inset-bottom, 0px) + var(--sp-24)) var(--gl); }
+.start { width: min(440px, 100%); margin: 0 auto; display: grid; gap: var(--sp-16); }
+.bigtype { font: 800 clamp(34px, 10.5vw, 46px)/1.02 var(--font-display); letter-spacing: -.035em; color: var(--text); margin-top: var(--sp-16); }
+.bigtype i { font-style: normal; color: var(--primary); }
+.dz { position: relative; display: grid; justify-items: center; gap: var(--sp-8); text-align: center; padding: var(--sp-32) var(--sp-16) var(--sp-24); border-radius: var(--r-lg); cursor: pointer;
+  border: 1.5px dashed color-mix(in srgb, var(--primary) 45%, var(--outline)); background: var(--safelight-glow), var(--paper); transition: border-color var(--dur-fast) var(--ease), transform var(--dur-short) var(--ease); }
+.dz > .ico { color: var(--primary); }
+.dz .btn { margin-top: var(--sp-4); pointer-events: none; }
+.dz:hover, #drop.over .dz { border-color: var(--primary); }
 #drop.over .dz { transform: scale(1.02); }
-#drop .link { color: var(--muted); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; padding: 8px; }
-#drop.replace { z-index: 7; inset: 0; background: rgb(13 12 18 / .78); }
-#drop.replace .link { display: none; }
-@media (prefers-reduced-motion: reduce) { .light, #drop .dz { transition: none; } }
-#fatal { position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--muted); }
+.dz:focus-within { box-shadow: var(--focus-ring); }
+#trySample { min-height: var(--target); display: inline-flex; align-items: center; }
+#drop.replace { z-index: 1250; inset: 0; background: var(--scrim); display: grid; align-content: center; }
+#drop.replace .bigtype, #drop.replace .start-more, #drop.replace .presetgrid { display: none; }
+#fatal { position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--text-secondary); }
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <!-- app chrome -->
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+  <symbol id="i-redo" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.75"/><path d="m21 16-5-5-9 9"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4"/><path d="m7 9 5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16v4M17 18h4"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10 12 4l8 6v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></symbol>
+  <!-- light, blur, mask -->
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-blur" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/></symbol>
+  <symbol id="i-mask" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-radial" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5" stroke-dasharray="2 2.4"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-linear" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18" /><path d="M3 15h18" stroke-dasharray="2 2.4"/></symbol>
+  <symbol id="i-brush" viewBox="0 0 24 24"><path d="M14 4l6 6-8.5 8.5a3 3 0 0 1-2 .9L5 20l.6-4.5a3 3 0 0 1 .9-2z"/><path d="M12 6l6 6"/></symbol>
+  <symbol id="i-object" viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><circle cx="12" cy="12" r="3.5"/></symbol>
+  <symbol id="i-flower" viewBox="0 0 24 24"><circle cx="12" cy="9" r="2"/><path d="M12 7c0-2.5 1.5-4 3-4 0 2-1 3.5-3 4zM12 7c0-2.5-1.5-4-3-4 0 2 1 3.5 3 4zM14 9c2.5 0 4 1.5 4 3-2 0-3.5-1-4-3zM10 9c-2.5 0-4 1.5-4 3 2 0 3.5-1 4-3z"/><path d="M12 11v10M12 17c-1.5-1.5-3.5-2-5-1.5M12 19c1.5-1.5 3.5-2 5-1.5"/></symbol>
+  <symbol id="i-invert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-solo" viewBox="0 0 24 24"><path d="M12 3v3"/><path d="M8 7h8l3 11H5z"/><path d="M9 21h6"/></symbol>
+  <!-- list + editing -->
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3 3.8M6.5 6.6A17 17 0 0 0 2 12s3.5 7 10 7a9.6 9.6 0 0 0 4.4-1"/></symbol>
+  <symbol id="i-grip" viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.4" fill="currentColor" stroke="none"/><circle cx="15" cy="6" r="1.4" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="9" cy="18" r="1.4" fill="currentColor" stroke="none"/><circle cx="15" cy="18" r="1.4" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-chevron-up" viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></symbol>
+  <symbol id="i-more-v" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.6" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-more-h" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13 7 4 4"/></symbol>
+  <!-- status -->
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></symbol>
+  <symbol id="i-warning" viewBox="0 0 24 24"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17v.5"/></symbol>
+  <symbol id="i-error" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></symbol>
+  <symbol id="i-success" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></symbol>
+</svg>
 
 <canvas id="gl" class="stage" aria-label="Photograph being edited. One finger edits the selected light, blur or mask; two fingers pan and zoom."></canvas>
 <canvas id="ov" class="stage" aria-hidden="true"></canvas>
 <div id="drop" hidden>
-  <label class="dz">
-    <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="10" width="36" height="28" rx="4"/><circle cx="17" cy="20" r="3.2"/><path d="m42 31-9-9-15 16"/><path d="M24 2v6M33 4l-3 5M15 4l3 5"/></svg>
-    <b id="dropTitle">Add a photograph</b>
-    <span class="hint" id="dropHint">Drop a JPEG, PNG or WebP here, or tap to choose one from your photos.</span>
-    <span class="chip primary">Choose a photo</span>
-    <input type="file" id="dropFile" accept="image/jpeg,image/png,image/webp,.json,application/json">
-  </label>
-  <button class="link" id="trySample">Or try a sample photo</button>
+  <div class="start">
+    <h1 class="bigtype">Add light<br>to the <i>night.</i></h1>
+    <label class="dz">
+      <svg class="ico ico--xl" aria-hidden="true"><use href="#i-upload"/></svg>
+      <span class="t-h6" id="dropTitle">Add a photograph</span>
+      <span class="t-body2" id="dropHint">Drop a JPEG, PNG or WebP here, or tap to choose one from your photos.</span>
+      <span class="btn btn-contained"><svg class="ico" aria-hidden="true"><use href="#i-image"/></svg>Choose a photo</span>
+      <input type="file" id="dropFile" class="vh" accept="image/jpeg,image/png,image/webp,.json,application/json">
+    </label>
+    <div class="row between start-more"><span class="t-overline">Or start from a preset</span><button class="link link-quiet t-caption" id="trySample">Try a sample photo</button></div>
+    <div class="grid-2 presetgrid" id="startPresets" style="--gap:var(--sp-8)"></div>
+  </div>
+  <input type="file" id="presetFile" class="vh" tabindex="-1" aria-hidden="true" accept="image/jpeg,image/png,image/webp">
 </div>
 
-<header id="top">
-  <div id="mark"><b>Lumière</b><small>by Les Fleurs de la Nuit</small></div>
-  <button class="icon" id="undo" title="Undo" aria-label="Undo"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
-  <button class="icon" id="redo" title="Redo" aria-label="Redo"><svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
-  <label class="icon" title="Open a photo or project" aria-label="Open a photo or project"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m21 15-4.5-4.5L8 19"/></svg><input id="openFile" type="file" accept="image/jpeg,image/png,image/webp,.json,application/json" hidden></label>
-  <button id="exportBtn">Export</button>
+<header id="top" class="appbar transparent">
+  <div id="mark" class="grow"><div class="wordmark">Lumi<i>è</i>re</div><small>by Les Fleurs de la Nuit</small></div>
+  <button class="icon-btn" id="undo" title="Undo" aria-label="Undo"><svg class="ico"><use href="#i-undo"/></svg></button>
+  <button class="icon-btn" id="redo" title="Redo" aria-label="Redo"><svg class="ico"><use href="#i-redo"/></svg></button>
+  <button class="icon-btn" id="openBtn" title="Open a photo or project" aria-label="Open a photo or project"><svg class="ico"><use href="#i-image"/></svg></button>
+  <input id="openFile" type="file" accept="image/jpeg,image/png,image/webp,.json,application/json" hidden>
+  <button class="btn btn-contained btn-sm" id="exportBtn">Export</button>
 </header>
 <div id="perf" class="float" hidden></div>
 <div id="soloTag" class="float" hidden>This light alone</div>
-<div id="toast" hidden></div>
-<section id="sheet" hidden><div id="peek" hidden></div><div id="panel"></div></section>
+<div id="toast" class="snackbar" role="status" aria-live="polite" hidden></div>
+<section id="sheet" class="drawer drawer-bottom" hidden>
+  <button id="grab" aria-label="Make the panel taller"><span class="grabber"></span></button>
+  <div id="peek" class="t-mono" hidden></div><div id="panel"></div>
+</section>
+<div id="pop" class="menu" role="menu" hidden></div>
 <div id="modal" hidden></div>
 
 <script>
@@ -236,18 +247,6 @@ const PREVIEW_LONG = 1600, MASK_LONG = 1024, THUMB = 104;
 const TFJS_URL = "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js";
 const MODEL_URL = "models/u2netp.json"; // U²-Net-p salient object model (Apache-2.0), published next to this page
 const PIECES = { subject: "Subject", object: "Object", brush: "Brush", radial: "Radial gradient", linear: "Linear gradient" };
-const IC = {
-  grip: '<svg class="i" viewBox="0 0 24 24"><path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01" stroke-width="3"/></svg>',
-  eyeOn: '<svg class="i" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
-  eyeOff: '<svg class="i" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3 3.8M6.5 6.6A17 17 0 0 0 2 12s3.5 7 10 7a9.6 9.6 0 0 0 4.4-1"/></svg>',
-  up: '<svg class="i" viewBox="0 0 24 24"><path d="m6 14 6-6 6 6"/></svg>', down: '<svg class="i" viewBox="0 0 24 24"><path d="m6 10 6 6 6-6"/></svg>',
-  del: '<svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
-  dup: '<svg class="i" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>',
-  left: '<svg class="i" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg>', right: '<svg class="i" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>',
-  layers: '<svg class="i" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></svg>',
-  spark: '<svg class="i" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></svg>',
-  invert: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>',
-};
 
 /* ═════════════════════════ state ═════════════════════════ */
 const state = {
@@ -258,7 +257,7 @@ const state = {
   section: "light",      // light | blurs | mask (inside the editor)
   focus: null,           // id of the blur or mask piece being edited
   drawing: null,         // { kind: "light" } or { kind: "piece", id }: the next drag draws that shape
-  solo: false, showMask: true, fine: false,
+  solo: false, showMask: true, fine: false, tall: false,
   brush: { size: 0.05, hard: 0.5, flow: 0.7, erase: false },
   view: { zoom: 1, x: 0, y: 0 }, interacting: false,
 };
@@ -319,7 +318,7 @@ void main(){ vec4 bk = texture(uBack,vUV); vec4 l = texture(uLayer,vUV); float a
 void main(){ vec2 sp = vec2(gl_FragCoord.x, uCanvas.y - gl_FragCoord.y); vec2 uv = ((sp - uPan)/uZoom)/uDoc;
   if(uv.x<0.0||uv.y<0.0||uv.x>1.0||uv.y>1.0){ o = vec4(uBg,1.0); return; }
   vec3 c = texture(uComp,uv).rgb;
-  if(uShowMask==1){ float m = texture(uMask,uv).r; c = mix(c, vec3(0.94,0.31,0.43), (1.0-m)*0.5); }
+  if(uShowMask==1){ float m = texture(uMask,uv).r; c = mix(c, vec3(0.957,0.353,0.51), (1.0-m)*0.5); }
   o = vec4(c,1.0); }`,
 };
 function compile(src) {
@@ -465,7 +464,7 @@ function renderPreview() {
   const mt = showMask ? layerMaskTex(l) : null; const dpr = devicePixelRatio || 1;
   run(P.display, null, { uComp: out.tex, uMask: mt || BLACK }, u => {
     gl.uniform2f(u.uCanvas, glCanvas.width, glCanvas.height); gl.uniform2f(u.uPan, state.view.x * dpr, state.view.y * dpr); gl.uniform1f(u.uZoom, state.view.zoom * dpr);
-    gl.uniform2f(u.uDoc, state.doc.pw, state.doc.ph); gl.uniform3f(u.uBg, 13 / 255, 12 / 255, 18 / 255); gl.uniform1i(u.uShowMask, mt ? 1 : 0); });
+    gl.uniform2f(u.uDoc, state.doc.pw, state.doc.ph); gl.uniform3f(u.uBg, 18 / 255, 16 / 255, 15 / 255); gl.uniform1i(u.uShowMask, mt ? 1 : 0); });
 }
 
 /* thumbnails: each light alone (after its blurs and mask), rendered small, one per idle frame */
@@ -491,7 +490,7 @@ let dirty = true; const frameTimes = []; const perf = $("#perf"); let perfHide =
 const markDirty = () => { dirty = true; };
 function loop(t) {
   requestAnimationFrame(loop);
-  if (!assets.has("base")) { if (dirty) { dirty = false; gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, glCanvas.width, glCanvas.height); gl.clearColor(13 / 255, 12 / 255, 18 / 255, 1); gl.clear(gl.COLOR_BUFFER_BIT); og.setTransform(1, 0, 0, 1, 0, 0); og.clearRect(0, 0, ov.width, ov.height); } return; }
+  if (!assets.has("base")) { if (dirty) { dirty = false; gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, glCanvas.width, glCanvas.height); gl.clearColor(18 / 255, 16 / 255, 15 / 255, 1); gl.clear(gl.COLOR_BUFFER_BIT); og.setTransform(1, 0, 0, 1, 0, 0); og.clearRect(0, 0, ov.width, ov.height); } return; }
   if (dirty) { dirty = false; renderPreview(); drawOverlay(); if (state.interacting) { frameTimes.push(t); if (frameTimes.length > 30) frameTimes.shift(); showPerf(); } return; }
   if (state.ui === "list" && !state.interacting) updateOneThumb();
 }
@@ -544,11 +543,11 @@ function drawEllipse(o, color) {
 function drawOverlay() {
   const dpr = devicePixelRatio || 1; og.setTransform(dpr, 0, 0, dpr, 0, 0); og.clearRect(0, 0, innerWidth, innerHeight);
   const l = activeLayer(); if (!l || state.ui !== "editor") return;
-  const a = visibleArea(), accent = "#f2b56b", z = state.view.zoom;
-  if (state.section === "light" && l.light.type === "radial") drawEllipse(l.light, "rgba(242,181,107,.7)");
+  const a = visibleArea(), accent = state.section === "blurs" ? "#92B7CC" : "#FA653D", z = state.view.zoom;
+  if (state.section === "light" && l.light.type === "radial") drawEllipse(l.light, "rgba(250,101,61,.7)");
   if (state.section === "light" && l.light.type === "image") {
     const as = assets.get(l.light.key); if (as) { const [x, y] = toScreen(l.light.x, l.light.y), hw = l.light.scale * state.doc.pw * z / 2, hh = hw * as.h / as.w;
-      og.save(); og.translate(x, y); og.rotate(l.light.angle || 0); og.setLineDash([4, 5]); og.strokeStyle = "rgba(242,181,107,.6)"; og.lineWidth = 1.5; og.strokeRect(-hw, -hh, hw * 2, hh * 2); og.restore(); }
+      og.save(); og.translate(x, y); og.rotate(l.light.angle || 0); og.setLineDash([4, 5]); og.strokeStyle = "rgba(250,101,61,.6)"; og.lineWidth = 1.5; og.strokeRect(-hw, -hh, hw * 2, hh * 2); og.restore(); }
   }
   const f = focusedItem(l);
   if (state.section === "mask" && f?.type === "radial") drawEllipse(f, "rgba(255,255,255,.75)");
@@ -568,7 +567,7 @@ function drawOverlay() {
     } else if (!h.small) {
       const cx = a.x + a.w / 2, cy = a.y + a.h / 2, dx = x - cx, dy = y - cy, s = Math.min((a.w / 2 - 26) / Math.abs(dx || 1e-6), (a.h / 2 - 26) / Math.abs(dy || 1e-6)), ex = cx + dx * s, ey = cy + dy * s;
       og.save(); og.translate(ex, ey); og.rotate(Math.atan2(dy, dx)); og.fillStyle = accent; og.beginPath(); og.moveTo(12, 0); og.lineTo(-8, -9); og.lineTo(-4, 0); og.lineTo(-8, 9); og.closePath(); og.fill(); og.restore();
-      og.font = "500 11px 'JetBrains Mono', monospace"; og.fillStyle = "#ece6f1"; og.textAlign = "center"; const txt = h.label + " off-screen", half = og.measureText(txt).width / 2 + 10;
+      og.font = "500 11px 'IBM Plex Mono', monospace"; og.fillStyle = "#EDEAE9"; og.textAlign = "center"; const txt = h.label + " off-screen", half = og.measureText(txt).width / 2 + 10;
       og.fillText(txt, clamp(ex, a.x + half, a.x + a.w - half), ey + (dy > 0 ? -18 : 26));
     }
   }
@@ -578,7 +577,7 @@ function drawOverlay() {
     og.strokeStyle = "rgba(255,255,255,.85)"; og.beginPath(); og.arc(cursor[0], cursor[1], r, 0, Math.PI * 2); og.stroke();
     if (state.brush.hard < 0.95) { og.setLineDash([3, 4]); og.beginPath(); og.arc(cursor[0], cursor[1], r * state.brush.hard, 0, Math.PI * 2); og.stroke(); og.setLineDash([]); }
   }
-  if (boxDraft) { const [x0, y0, x1, y1] = boxDraft; og.fillStyle = "rgba(242,181,107,.08)"; og.fillRect(Math.min(x0, x1), Math.min(y0, y1), Math.abs(x1 - x0), Math.abs(y1 - y0));
+  if (boxDraft) { const [x0, y0, x1, y1] = boxDraft; og.fillStyle = "rgba(250,101,61,.08)"; og.fillRect(Math.min(x0, x1), Math.min(y0, y1), Math.abs(x1 - x0), Math.abs(y1 - y0));
     og.setLineDash([6, 5]); og.strokeStyle = accent; og.lineWidth = 1.5; og.strokeRect(Math.min(x0, x1), Math.min(y0, y1), Math.abs(x1 - x0), Math.abs(y1 - y0)); og.setLineDash([]); }
 }
 
@@ -742,26 +741,25 @@ function subjectStats(cov) {
    After applying, every light is fully editable.                                            */
 const behind = (density = 1) => ({ pieces: [newPiece("subject", { invert: true, data: subjectCache?.cov })], density, feather: 0.004, invert: false });
 const PRESETS = [
-  { id: "halo", name: "Halo", desc: "Warm glow behind the subject", look: "radial-gradient(circle at 50% 46%, #ffb87b 0 22%, #b0663380 40%, #0d0c12 70%)",
+  { id: "halo", name: "Halo", desc: "Warm glow behind the subject", look: "radial-gradient(circle at 50% 46%, #ffb87b 0 22%, #b0663380 40%, #0B0A09 70%)",
     make: async s => [makeLayer("Halo · 3200K", radialLight({ x: s.cx, y: s.cy, rx: s.r * 1.25, ry: s.r * 1.25, soft: 0.95, color: "#ffb87b" }), { opacity: 0.9, blurs: [gaussBlur(0.03)], mask: behind() })] },
-  { id: "window", name: "Window beams", desc: "Daylight streaming in from above", look: "linear-gradient(150deg, #fff3df 0 12%, #f6dcb455 30%, #0d0c12 65%)",
+  { id: "window", name: "Window beams", desc: "Daylight streaming in from above", look: "linear-gradient(150deg, #fff3df 0 12%, #f6dcb455 30%, #0B0A09 65%)",
     make: async s => { const wx = clamp(s.cx - 0.28, 0.08, 0.92), wy = clamp(s.top - 0.12, 0.02, 0.5);
       return [makeLayer("Window beams", imageLight(await libraryAsset("window"), { x: wx, y: wy, scale: 0.45 }), { opacity: 0.7, blurs: [radialBlur(0.6, wx + (wx - s.cx) * 1.6, wy + (wy - s.cy) * 1.6)], mask: behind(0.65) })]; } },
-  { id: "spot", name: "Spotlight", desc: "Neutral light on the subject itself", look: "radial-gradient(ellipse 40% 34% at 50% 48%, #fff0de 0 30%, #fff0de30 60%, #0d0c12 80%)",
+  { id: "spot", name: "Spotlight", desc: "Neutral light on the subject itself", look: "radial-gradient(ellipse 40% 34% at 50% 48%, #fff0de 0 30%, #fff0de30 60%, #0B0A09 80%)",
     make: async s => [makeLayer("Spotlight · 5600K", radialLight({ x: s.cx, y: s.cy - s.r * 0.15, rx: s.r * 0.9, ry: s.r * 0.75, soft: 0.9, color: "#ffefe1" }), { blend: "overlay", opacity: 0.6, blurs: [gaussBlur(0.02)] })] },
-  { id: "golden", name: "Golden side light", desc: "Low warm sun raking in from the left", look: "radial-gradient(ellipse 70% 60% at 0% 45%, #ff9a3c 0 25%, #ff7a2a40 55%, #0d0c12 85%)",
+  { id: "golden", name: "Golden side light", desc: "Low warm sun raking in from the left", look: "radial-gradient(ellipse 70% 60% at 0% 45%, #ff9a3c 0 25%, #ff7a2a40 55%, #0B0A09 85%)",
     make: async s => [
       makeLayer("Side sun · 2700K", radialLight({ x: -0.05, y: s.cy, rx: 0.6, ry: 0.45, soft: 0.95, color: "#ffa757" }), { opacity: 0.75, blurs: [radialBlur(0.35, s.cx, s.cy)], mask: behind(0.5) }),
       makeLayer("Light leak", imageLight(await libraryAsset("leak"), { x: 0.2, y: 0.5, scale: 1.1 }), { opacity: 0.35, blurs: [gaussBlur(0.02)] })] },
-  { id: "moon", name: "Moon rim", desc: "Cool edge light around the outline", look: "radial-gradient(circle at 50% 46%, #0d0c12 0 26%, #e6ebff 30%, #6f7ab055 44%, #0d0c12 66%)",
+  { id: "moon", name: "Moon rim", desc: "Cool edge light around the outline", look: "radial-gradient(circle at 50% 46%, #0B0A09 0 26%, #e6ebff 30%, #6f7ab055 44%, #0B0A09 66%)",
     make: async s => [makeLayer("Moon rim · 7500K", radialLight({ x: s.cx + s.r * 0.25, y: s.cy - s.r * 0.25, rx: s.r * 1.1, ry: s.r * 1.1, soft: 0.8, color: "#e6ebff" }), { blend: "dodge", opacity: 0.5, blurs: [radialBlur(0.45, s.cx, s.cy)], mask: behind() })] },
-  { id: "bokeh", name: "Night bokeh", desc: "Soft points of light behind the subject", look: "radial-gradient(circle at 25% 30%, #ffc27a 0 6%, transparent 7%), radial-gradient(circle at 70% 25%, #ffd39a 0 8%, transparent 9%), radial-gradient(circle at 60% 70%, #ffb46a 0 5%, transparent 6%), #120f16",
+  { id: "bokeh", name: "Night bokeh", desc: "Soft points of light behind the subject", look: "radial-gradient(circle at 25% 30%, #ffc27a 0 6%, transparent 7%), radial-gradient(circle at 70% 25%, #ffd39a 0 8%, transparent 9%), radial-gradient(circle at 60% 70%, #ffb46a 0 5%, transparent 6%), #0B0A09",
     make: async s => [makeLayer("Bokeh", imageLight(await libraryAsset("bokeh"), { x: 0.5, y: 0.45, scale: 1.4 }), { opacity: 0.6, blurs: [gaussBlur(0.006)], mask: behind() })] },
 ];
 function openPresets() {
-  openModal(`<div class="card"><h3>Presets</h3><p class="hint">One tap adds a set of lights placed around your subject. Each light stays fully editable.</p>
-    <div class="presets">${PRESETS.map(p => `<button class="preset" data-preset="${p.id}"><i style="background:${p.look}"></i><span><b>${p.name}</b><small>${p.desc}</small></span></button>`).join("")}</div>
-    <button class="chip" data-close>Cancel</button></div>`);
+  openModal(sheetCard("Presets", `<p class="t-body2">One tap adds a set of lights placed around your subject. Each light stays fully editable.</p>
+    <div class="grid-2 presetgrid" style="--gap:var(--sp-8)">${presetCards("data-preset")}</div>`));
 }
 async function applyPreset(id) {
   const p = PRESETS.find(x => x.id === id); closeModal();
@@ -862,118 +860,166 @@ function paintAt(p, x, y) {
   lastPaint = [mx, my]; bumpData(d); markDirty();
 }
 
-/* ═════════════════════════ sheet: bar → list → editor ═════════════════════════ */
+/* ═════════════════════════ sheet: bar → list → editor ═════════════════════════
+   Markup uses the Darkroom design-system classes (design-system/styles.css).        */
 const panel = $("#panel"); const pct = v => Math.round(v * 100) + "%";
 const SL = {
-  opacity: { label: "Opacity", min: 0, max: 1, step: 0.01, get: l => l.opacity, set: (l, v) => (l.opacity = v), fmt: pct },
-  soft: { label: "Softness", min: 0, max: 1, step: 0.01, get: l => l.light.soft, set: (l, v) => (l.light.soft = v), fmt: pct },
-  scale: { label: "Scale", min: 0.1, max: 3, step: 0.01, get: l => l.light.scale, set: (l, v) => (l.light.scale = v), fmt: pct },
-  rotation: { label: "Rotation", min: -180, max: 180, step: 1, get: l => Math.round(l.light.angle * 180 / Math.PI), set: (l, v) => (l.light.angle = v * Math.PI / 180), fmt: v => v + "°" },
-  exposure: { label: "Brightness", min: 0.2, max: 4, step: 0.05, get: l => l.light.exposure, set: (l, v) => (l.light.exposure = v), fmt: v => "×" + (+v).toFixed(2) },
-  density: { label: "Density", min: 0, max: 1, step: 0.01, get: l => l.mask.density, set: (l, v) => (l.mask.density = v), fmt: pct },
-  feather: { label: "Feather", min: 0, max: 0.05, step: 0.0005, get: l => l.mask.feather, set: (l, v) => (l.mask.feather = v), fmt: v => (v * 100).toFixed(1) + "%" },
-  strength: { label: "Strength", min: 0, max: 1, step: 0.01, get: (l, f) => f.strength, set: (l, v, f) => (f.strength = v), fmt: pct },
-  radius: { label: "Radius", min: 0.001, max: 0.08, step: 0.001, get: (l, f) => f.radius, set: (l, v, f) => (f.radius = v), fmt: v => (v * 100).toFixed(1) + "% of long side" },
-  pfeather: { label: "Feather", min: 0, max: 1, step: 0.01, get: (l, f) => f.feather, set: (l, v, f) => (f.feather = v), fmt: pct },
-  bsize: { label: "Size", min: 0.005, max: 0.25, step: 0.001, get: () => state.brush.size, set: (_, v) => (state.brush.size = v), fmt: v => (v * 100).toFixed(1) + "%", ui: true },
-  bhard: { label: "Hardness", min: 0, max: 1, step: 0.01, get: () => state.brush.hard, set: (_, v) => (state.brush.hard = v), fmt: pct, ui: true },
-  bflow: { label: "Flow", min: 0.05, max: 1, step: 0.01, get: () => state.brush.flow, set: (_, v) => (state.brush.flow = v), fmt: pct, ui: true },
+  opacity: { label: "Opacity", min: 0, max: 1, step: 0.01, def: 0.8, get: l => l.opacity, set: (l, v) => (l.opacity = v), fmt: pct },
+  soft: { label: "Softness", min: 0, max: 1, step: 0.01, def: 0.85, get: l => l.light.soft, set: (l, v) => (l.light.soft = v), fmt: pct },
+  scale: { label: "Scale", min: 0.1, max: 3, step: 0.01, def: 0.8, get: l => l.light.scale, set: (l, v) => (l.light.scale = v), fmt: pct },
+  rotation: { label: "Rotation", min: -180, max: 180, step: 1, def: 0, get: l => Math.round(l.light.angle * 180 / Math.PI), set: (l, v) => (l.light.angle = v * Math.PI / 180), fmt: v => v + "°" },
+  exposure: { label: "Brightness", min: 0.2, max: 4, step: 0.05, def: 1, get: l => l.light.exposure, set: (l, v) => (l.light.exposure = v), fmt: v => "×" + (+v).toFixed(2) },
+  density: { label: "Density", min: 0, max: 1, step: 0.01, def: 1, get: l => l.mask.density, set: (l, v) => (l.mask.density = v), fmt: pct },
+  feather: { label: "Feather", min: 0, max: 0.05, step: 0.0005, def: 0.004, get: l => l.mask.feather, set: (l, v) => (l.mask.feather = v), fmt: v => (v * 100).toFixed(1) + "%" },
+  strength: { label: "Strength", min: 0, max: 1, step: 0.01, def: 0.4, get: (l, f) => f.strength, set: (l, v, f) => (f.strength = v), fmt: pct },
+  radius: { label: "Radius", min: 0.001, max: 0.08, step: 0.001, def: 0.02, get: (l, f) => f.radius, set: (l, v, f) => (f.radius = v), fmt: v => (v * 100).toFixed(1) + "% of long side" },
+  pfeather: { label: "Feather", min: 0, max: 1, step: 0.01, def: 0.5, get: (l, f) => f.feather, set: (l, v, f) => (f.feather = v), fmt: pct },
+  bsize: { label: "Size", min: 0.005, max: 0.25, step: 0.001, def: 0.05, get: () => state.brush.size, set: (_, v) => (state.brush.size = v), fmt: v => (v * 100).toFixed(1) + "%", ui: true },
+  bhard: { label: "Hardness", min: 0, max: 1, step: 0.01, def: 0.5, get: () => state.brush.hard, set: (_, v) => (state.brush.hard = v), fmt: pct, ui: true },
+  bflow: { label: "Flow", min: 0.05, max: 1, step: 0.01, def: 0.7, get: () => state.brush.flow, set: (_, v) => (state.brush.flow = v), fmt: pct, ui: true },
 };
-const slider = (k, l, f) => { const s = SL[k], v = s.get(l, f); return `<div class="slider"><label class="row" for="s-${k}"><span>${s.label}</span><output id="o-${k}">${s.fmt(v)}</output></label><input type="range" id="s-${k}" data-sl="${k}" min="${s.min}" max="${s.max}" step="${s.step}" value="${v}"></div>`; };
-const seg = (key, opts, cur, cls = "") => `<div class="seg ${cls}" role="group">${opts.map(([v, t]) => `<button data-seg="${key}" data-val="${v}" aria-pressed="${v === cur}">${t}</button>`).join("")}</div>`;
-const chip = (act, text, pressed, extra = "") => `<button class="chip ${extra}" data-act="${act}"${pressed === undefined ? "" : ` aria-pressed="${pressed}"`}>${text}</button>`;
+const ico = (n, cls = "") => `<svg class="ico ${cls}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+const slP = (s, v) => clamp((v - s.min) / (s.max - s.min), 0, 1);
+// A design-system slider drawn over a native range input. Double-tap resets it.
+const slider = (k, l, f) => { const s = SL[k], v = s.get(l, f);
+  return `<div class="slider" style="--p:${slP(s, v)}"><label class="head" for="s-${k}"><span>${s.label}</span><output class="t-mono" id="o-${k}">${s.fmt(v)}</output></label>
+    <div class="rail"><span class="fill"></span><span class="thumb"></span><input type="range" id="s-${k}" data-sl="${k}" min="${s.min}" max="${s.max}" step="${s.step}" value="${v}"></div></div>`; };
+const toggles = (key, opts, cur, label) => `<div class="toggle-group" role="group" aria-label="${label}">${opts.map(([v, t, i]) => `<button class="toggle" data-seg="${key}" data-val="${v}" aria-pressed="${v === cur}">${i ? ico(i) : ""}${t}</button>`).join("")}</div>`;
+const sw = (act, text, on, id) => `<button class="switch line" role="switch" aria-checked="${on}" data-act="${act}"${id ? ` data-id="${id}"` : ""}><span class="grow">${text}</span><span class="track"></span></button>`;
+const eyeBtn = (act, id, on, name) => `<button class="icon-btn eye" data-act="${act}" data-id="${id}" aria-label="${on ? "Turn off" : "Turn on"} ${esc(name)}">${ico(on ? "eye" : "eye-off")}</button>`;
+const accordion = (open, id, lead, title, tag, eye, body) => `<div class="accordion" aria-expanded="${open}"><div class="sum">
+  <button class="what" data-act="focus" data-id="${id}" aria-expanded="${open}">${lead}<span class="t">${title}</span><span class="t-mono">${tag}</span>${ico("chevron-down", "chev")}</button>${eye}</div>
+  ${open ? `<div class="det">${body}</div>` : ""}</div>`;
+const PIECE_ICON = { subject: "user", object: "object", brush: "brush", radial: "radial", linear: "linear" };
+const MODE_NAME = { add: "Add", subtract: "Subtract", intersect: "Intersect" };
+const presetCards = attr => PRESETS.map(p => `<button class="card clickable preset" ${attr}="${p.id}"><span class="media" style="background:${p.look}"></span><span class="content"><span class="t-subtitle2">${p.name}</span><span class="t-caption">${p.desc}</span></span></button>`).join("");
 
 function renderPanel() {
-  $("#sheet").hidden = state.ui === "none";
+  closeMenu(true);
+  const sh = $("#sheet"); sh.hidden = state.ui === "none"; sh.classList.toggle("tall", state.tall);
   if (state.ui === "none") { panel.innerHTML = ""; updateUndo(); return; }
   const l = activeLayer(); let h = "";
   if (state.ui === "editor" && !l) state.ui = "list";
   if (state.ui === "bar") {
-    h = `<div class="bar"><button data-act="open-list">${IC.layers} Lights <span class="count">${state.layers.length}</span></button><button data-act="presets">${IC.spark} Presets</button></div>`;
+    h = `<div class="bar"><button class="btn btn-tonal" data-act="open-list">${ico("layers")}Lights <span class="t-mono count">${state.layers.length}</span></button><button class="btn btn-tonal" data-act="presets">${ico("sparkle")}Presets</button></div>`;
   } else if (state.ui === "list") {
-    h = `<div class="sticky"><div class="row between"><h2>Lights</h2><button class="chip small" data-act="close-list">Hide</button></div>
-      <div class="chips"><button class="chip primary" data-act="new-light">+ New light</button><button class="chip" data-act="presets">${IC.spark} Presets</button></div></div>
-      <div class="lights" id="lights">${[...state.layers].reverse().map(x => {
-        const th = thumbs.get(x.id); return `<div class="light" data-id="${x.id}" aria-current="${x.id === state.activeId}">
-        <span class="grip" data-grip="${x.id}" aria-label="Drag to reorder">${IC.grip}</span>
+    h = `<div class="sticky"><div class="row between"><h2 class="t-h5">Lights</h2><button class="btn btn-text btn-sm c-neutral" data-act="close-list">Hide</button></div>
+      <div class="row"><button class="btn btn-contained btn-sm" data-act="new-light">${ico("plus")}New light</button><button class="btn btn-tonal btn-sm" data-act="presets">${ico("sparkle")}Presets</button></div></div>
+      <div id="lights">${[...state.layers].reverse().map(x => { const th = thumbs.get(x.id);
+        return `<div class="layer-row${x.id === state.activeId ? " active" : ""}${x.visible ? "" : " hidden-layer"}" data-id="${x.id}">
+        <span class="grip" data-grip="${x.id}" title="Drag to reorder">${ico("grip")}</span>
         <img class="thumb" data-thumb="${x.id}" alt=""${th?.url ? ` src="${th.url}"` : ""}>
-        <button class="name" data-act="edit" data-id="${x.id}"><b>${esc(x.name)}</b><small>${layerSummary(x)}</small></button>
-        <button class="eye" data-act="eye" data-id="${x.id}" aria-pressed="${x.visible}" aria-label="${x.visible ? "Hide" : "Show"} ${esc(x.name)}">${x.visible ? IC.eyeOn : IC.eyeOff}</button></div>`; }).join("")}</div>
-      <div class="photo-row"><span></span><span class="thumb" style="display:grid;place-items:center;font:500 10px var(--f-num)">${state.doc.w}<br>×${state.doc.h}</span><span><b style="color:var(--text);font-weight:500">Photograph</b><br><small>Never blurred or changed</small></span>
-        <label class="btn" style="padding:7px 11px">Replace<input type="file" id="replacePhoto" accept="image/jpeg,image/png,image/webp"></label></div>
-      ${state.layers.length ? `<p class="note">Lights are stacked top to bottom. Drag the handle on the left to reorder.</p>` : `<p class="hint">No lights yet. Add one, or start from a preset.</p>`}`;
+        <button class="name" data-act="edit" data-id="${x.id}"><span class="pri">${esc(x.name)}</span><span class="sec">${layerSummary(x)}</span></button>
+        ${eyeBtn("eye", x.id, x.visible, x.name).replace(/Turn off|Turn on/, x.visible ? "Hide" : "Show")}</div>`; }).join("")}</div>
+      <div class="layer-row base-row"><span></span><span class="thumb dims t-mono">${state.doc.w}<br>×${state.doc.h}</span><span class="name"><span class="pri">Photograph</span><span class="sec">Never blurred or changed</span></span>
+        <label class="btn btn-text btn-sm">Replace<input type="file" class="vh" id="replacePhoto" accept="image/jpeg,image/png,image/webp"></label></div>
+      <p class="t-caption">${state.layers.length ? "Lights stack top to bottom. Drag a handle, or press and hold a light, to reorder." : "No lights yet. Add one, or start from a preset."}</p>`;
   } else {
-    const idx = state.layers.length - 1 - state.layers.indexOf(l), n = state.layers.length;
-    h = `<div class="sticky"><div class="ed-head" id="edHead"><button class="back" data-act="to-list">${IC.left}Lights</button>
-        <div class="ed-title"><button class="nav" data-act="prev" ${idx === 0 ? "disabled" : ""} aria-label="Light above">${IC.left}</button><b>${esc(l.name)}</b><span class="pos">${idx + 1}/${n}</span><button class="nav" data-act="next" ${idx === n - 1 ? "disabled" : ""} aria-label="Light below">${IC.right}</button></div>
-        <button class="eye" data-act="eye" data-id="${l.id}" aria-pressed="${l.visible}" aria-label="${l.visible ? "Hide" : "Show"} this light">${l.visible ? IC.eyeOn : IC.eyeOff}</button></div>
-      ${slider("opacity", l)}${seg("blend", BLENDS.map(([k, t]) => [k, t === "Color Dodge" ? "Dodge" : t]), l.blend, "small")}
-      ${seg("section", [["light", "Light"], ["blurs", `Blurs<small>${l.blurs.length}</small>`], ["mask", `Mask<small>${l.mask.pieces.length}</small>`]], state.section, "tabs")}</div>`;
-    h += `<div class="sec">${state.section === "light" ? lightSection(l) : state.section === "blurs" ? blurSection(l) : maskSection(l)}</div>`;
-    h += `<div class="chips">${chip("solo", "Show this light alone", state.solo)}${chip("dup", IC.dup + " Duplicate")}${chip("del-layer", IC.del + " Delete light", undefined, "danger")}</div>`;
+    const list = [...state.layers].reverse(), idx = list.indexOf(l), n = list.length, blend = BLENDS.find(b => b[0] === l.blend)[1], si = SECTIONS.indexOf(state.section);
+    const tab = (k, t, i, count) => `<button class="tab" role="tab" data-seg="section" data-val="${k}" aria-selected="${state.section === k}">${ico(i, "ico--sm")}${t}${count ? ` <span class="t-mono">${count}</span>` : ""}</button>`;
+    h = `<div class="sticky"><div class="ed-head" id="edHead">
+        <button class="icon-btn" data-act="to-list" aria-label="Back to lights">${ico("chevron-left")}</button>
+        <div class="ttl"><div class="t-h5">${esc(l.name)}</div><div class="t-mono">${idx + 1} of ${n}${l.visible ? "" : " · hidden"}${n > 1 ? " · swipe for next" : ""}</div></div>
+        <button class="icon-btn" data-act="solo" aria-pressed="${state.solo}" aria-label="Show this light alone">${ico("solo")}</button>
+        <button class="icon-btn" data-act="more" aria-haspopup="menu" aria-expanded="false" aria-label="More for this light">${ico("more-v")}</button></div>
+      <div class="q">${slider("opacity", l)}<button class="chip" data-act="blend-menu" aria-haspopup="menu" aria-expanded="false" aria-label="Blend mode: ${blend}">${blend}${ico("chevron-down")}</button></div>
+      <div class="tabs" role="tablist">${tab("light", "Light", "sun")}${tab("blurs", "Blurs", "blur", l.blurs.length)}${tab("mask", "Mask", "mask", l.mask.pieces.length)}<span class="ind" style="--x:${si * 100}%"></span></div></div>
+      <div class="tabpanel" role="tabpanel">${state.section === "light" ? lightSection(l) : state.section === "blurs" ? blurSection(l) : maskSection(l)}</div>`;
   }
   panel.innerHTML = h;
-  const tabs = panel.querySelector(".seg.tabs"); if (tabs) tabs.insertAdjacentHTML("beforeend", `<span class="ind" style="transform:translateX(${SECTIONS.indexOf(state.section) * 100}%)"></span>`);
   updateUndo(); requestAnimationFrame(() => drawOverlay());
 }
 function lightSection(l) {
-  const lt = l.light; let h = seg("ltype", [["radial", "Radial gradient"], ["image", "Light image"]], lt.type);
+  const lt = l.light, type = toggles("ltype", [["radial", "Gradient", "radial"], ["image", "Image", "image"]], lt.type, "Kind of light"), fine = sw("fine", "Fine drag (¼ speed)", state.fine);
   if (lt.type === "radial") {
-    h += `<div class="chips">${chip("draw-light", state.drawing?.kind === "light" ? "Drag on the photo…" : "Draw again", state.drawing?.kind === "light")}${chip("fine", "Fine drag ¼×", state.fine)}</div>
-      <p class="hint">${state.drawing?.kind === "light" ? "Press where the light should be centered and drag outward to set its size." : "Drag the center to move it. Drag a side handle to stretch or rotate the ellipse."}</p>
-      <div class="grid2">${slider("soft", l)}</div>
-      <div class="label">Color temperature</div><div class="swatches">${SWATCHES.map(([n, c]) => `<button class="sw" data-act="color" data-val="${c}" aria-pressed="${lt.color === c}" aria-label="${n}"><i style="background:${c}"></i>${n}</button>`).join("")}
-      <label class="sw" aria-label="Custom color"><input type="color" id="customColor" value="${lt.color}">Custom</label></div>`;
-  } else {
-    h += `<div class="libs">${LIBRARY.map(([k, n]) => `<button data-lib="${k}" aria-pressed="${lt.key === "lib:" + k}"><img alt="" src="${libThumb(k)}">${n}</button>`).join("")}
-      <label><span class="add">+</span>Your image<input type="file" id="lightFile" accept="image/png,image/jpeg,image/webp"></label></div>
-      <div class="grid2">${slider("scale", l)}${slider("rotation", l)}${slider("exposure", l)}</div>
-      <div class="chips">${chip("fine", "Fine drag ¼×", state.fine)}</div><p class="hint">Drag on the photo to move the image. Images on black or transparent backgrounds work best with Screen.</p>`;
+    const custom = !SWATCHES.some(s => s[1] === lt.color), drawing = state.drawing?.kind === "light";
+    return `<div class="swatch-row" role="group" aria-label="Color temperature">${SWATCHES.map(([n, c]) => `<button class="swatch" data-act="color" data-val="${c}" aria-pressed="${lt.color === c}" style="--sw:${c}"><i></i>${n}</button>`).join("")}
+        <label class="swatch custom${custom ? " on" : ""}" style="--sw:${lt.color}"><i></i>Custom<input type="color" id="customColor" value="${lt.color}" aria-label="Custom color"></label></div>
+      ${slider("soft", l)}${type}
+      <div class="row"><button class="btn btn-tonal btn-sm" data-act="draw-light" aria-pressed="${drawing}">${ico("edit")}${drawing ? "Drag on the photo…" : "Redraw"}</button></div>
+      ${fine}<p class="t-caption">${drawing ? "Press where the light should be centered and drag outward to set its size." : "Drag the center to move the light. Drag a side handle to stretch or rotate it."}</p>`;
   }
-  return h;
+  return `<div class="libs">${LIBRARY.map(([k, n]) => `<button data-lib="${k}" aria-pressed="${lt.key === "lib:" + k}"><img alt="" src="${libThumb(k)}">${n}</button>`).join("")}
+      <label><span class="add">${ico("plus")}</span>Upload<input type="file" class="vh" id="lightFile" accept="image/png,image/jpeg,image/webp" aria-label="Use your own light image"></label></div>
+    <div class="grid-2">${slider("exposure", l)}${slider("scale", l)}</div>${slider("rotation", l)}${type}${fine}
+    <p class="t-caption">Drag on the photo to move the image. Images on black or transparent backgrounds work best with Screen.</p>`;
 }
 function blurSection(l) {
-  let h = `<div class="items">${l.blurs.map((b, i) => {
-    const open = state.focus === b.id;
-    return `<div class="item" aria-current="${open}"><div class="row"><button class="what" data-act="focus" data-id="${b.id}"><small>${i + 1}</small><span>${blurLabel(b)}</span><small>${blurValue(b)}</small></button>
-      <button class="tool" data-act="blur-on" data-id="${b.id}" aria-pressed="${b.on}" aria-label="${b.on ? "Turn off" : "Turn on"}">${b.on ? IC.eyeOn : IC.eyeOff}</button>
-      <button class="tool" data-act="blur-up" data-id="${b.id}" ${i === 0 ? "disabled" : ""} aria-label="Run earlier">${IC.up}</button>
-      <button class="tool" data-act="blur-down" data-id="${b.id}" ${i === l.blurs.length - 1 ? "disabled" : ""} aria-label="Run later">${IC.down}</button>
-      <button class="tool" data-act="blur-del" data-id="${b.id}" aria-label="Remove">${IC.del}</button></div>
-      ${open ? `<div class="body">${b.type === "radial" ? seg("method", [["zoom", "Zoom"], ["spin", "Spin"]], b.method) + slider("strength", l, b) +
-        `<div class="chips">${chip("fine", "Fine drag ¼×", state.fine)}${chip("center-reset", "Center on photo")}</div><div class="readout">${fmtXY(b.cx, b.cy)}</div><p class="hint">Drag anywhere on the photo to move the center. It can sit outside the photo; pinch out to see it.</p>`
-        : slider("radius", l, b)}</div>` : ""}</div>`; }).join("")}</div>
-    <div class="chips">${chip("add-radial-blur", "+ Radial blur")}${chip("add-gauss-blur", "+ Gaussian blur")}</div>
-    <p class="note">${l.blurs.length ? "Blurs run top to bottom, each on the result of the one before. They affect this light only." : "No blur yet. Blurs affect this light only, never the photo or other lights."}</p>`;
-  return h;
+  const n = l.blurs.length, items = l.blurs.map((b, i) => {
+    const open = state.focus === b.id; let body = "";
+    if (open) {
+      body = b.type === "radial"
+        ? toggles("method", [["zoom", "Zoom"], ["spin", "Spin"]], b.method, "Radial blur method") + slider("strength", l, b) +
+          `<div class="row wrap"><button class="btn btn-tonal btn-sm" data-act="center-reset">Center on photo</button><span class="t-mono">${fmtXY(b.cx, b.cy)}</span></div>${sw("fine", "Fine drag (¼ speed)", state.fine)}
+          <p class="t-caption">Drag anywhere on the photo to move the center. It can sit outside the photo; pinch out to see it.</p>`
+        : slider("radius", l, b);
+      body += `<div class="det-actions"><button class="btn btn-text btn-sm c-neutral" data-act="blur-up" data-id="${b.id}" ${i === 0 ? "disabled" : ""}>${ico("chevron-up")}Earlier</button>
+        <button class="btn btn-text btn-sm c-neutral" data-act="blur-down" data-id="${b.id}" ${i === n - 1 ? "disabled" : ""}>${ico("chevron-down")}Later</button><span class="grow"></span>
+        <button class="btn btn-text btn-sm c-error" data-act="blur-del" data-id="${b.id}">${ico("trash")}Remove</button></div>`;
+    }
+    return accordion(open, b.id, `<span class="t-mono">${i + 1}</span>`, blurLabel(b), blurValue(b), eyeBtn("blur-on", b.id, b.on, blurLabel(b)), body); }).join("");
+  return `${n ? `<div>${items}</div>` : ""}
+    <button class="btn btn-tonal addbtn" data-act="add-blur-menu" aria-haspopup="menu" aria-expanded="false">${ico("plus")}Add blur</button>
+    <p class="t-caption">${n ? "Blurs run top to bottom, each on the result of the one before. They affect this light only." : "No blur yet. Blurs affect this light only, never the photo or other lights."}</p>`;
 }
 function maskSection(l) {
-  const ps = l.mask.pieces;
-  let h = `<div class="items">${ps.map((p, i) => {
-    const open = state.focus === p.id; let body = "";
+  const ps = l.mask.pieces, items = ps.map((p, i) => {
+    const open = state.focus === p.id, empty = (p.type === "object" || p.type === "subject") && !p.data; let body = "";
     if (open) {
-      if (p.type === "brush") body = seg("brush-mode", [["paint", "Paint"], ["erase", "Erase"]], state.brush.erase ? "erase" : "paint") + `<div class="grid2">${slider("bsize", l)}${slider("bhard", l)}${slider("bflow", l)}</div><p class="hint">One finger paints. The dashed inner circle shows where the brush is at full strength.</p>`;
-      if (p.type === "radial") body = `<div class="grid2">${slider("pfeather", l, p)}</div><div class="chips">${chip("draw-piece", state.drawing?.id === p.id ? "Drag on the photo…" : "Draw again", state.drawing?.id === p.id)}</div><p class="hint">Drag the center to move it; the side handles stretch and rotate.</p>`;
-      if (p.type === "linear") body = `<div class="chips">${chip("draw-piece", state.drawing?.id === p.id ? "Drag on the photo…" : "Draw again", state.drawing?.id === p.id)}</div><p class="hint">Full strength before the solid line, fading to nothing at the dashed line. Drag either point to adjust.</p>`;
-      if (p.type === "object") body = `<p class="hint">${p.data ? "Drag a new box to select a different object." : "Drag a box around the object on the photo."}</p>`;
-      if (p.type === "subject") body = `<p class="hint">The main subject of the photo. Turn on Invert to keep this light off the subject, for light behind it.</p>`;
+      if (i > 0) body += `<div class="toggle-group" role="group" aria-label="How this part combines with the ones above">${Object.entries(MODE_NAME).map(([m, t]) => `<button class="toggle" data-act="piece-mode" data-id="${p.id}" data-val="${m}" aria-pressed="${p.mode === m}">${t}</button>`).join("")}</div>`;
+      const redraw = `<div class="row"><button class="btn btn-tonal btn-sm" data-act="draw-piece" aria-pressed="${state.drawing?.id === p.id}">${ico("edit")}${state.drawing?.id === p.id ? "Drag on the photo…" : "Redraw"}</button></div>`;
+      if (p.type === "brush") body += toggles("brush-mode", [["paint", "Paint", "brush"], ["erase", "Erase", "minus"]], state.brush.erase ? "erase" : "paint", "Brush mode") + slider("bsize", l) + `<div class="grid-2">${slider("bhard", l)}${slider("bflow", l)}</div><p class="t-caption">One finger paints. The dashed inner circle shows where the brush is at full strength.</p>`;
+      if (p.type === "radial") body += slider("pfeather", l, p) + redraw + `<p class="t-caption">Drag the center to move it; the side handles stretch and rotate.</p>`;
+      if (p.type === "linear") body += redraw + `<p class="t-caption">Full strength before the solid line, fading to nothing at the dashed line. Drag either point to adjust.</p>`;
+      if (p.type === "object") body += `<p class="t-caption">${p.data ? "Drag a new box on the photo to select a different object." : "Drag a box around the object on the photo."}</p>`;
+      if (p.type === "subject") body += `<p class="t-caption">The main subject of the photo. Turn on Invert to keep this light off the subject, for light behind it.</p>`;
+      body += sw("piece-inv", "Invert this part", p.invert, p.id) + `<div class="det-actions"><span class="grow"></span><button class="btn btn-text btn-sm c-error" data-act="piece-del" data-id="${p.id}">${ico("trash")}Remove</button></div>`;
     }
-    const mode = i === 0 ? `<span class="base-tag">Base</span>` : `<span class="mode">${[["add", "Add"], ["subtract", "Sub"], ["intersect", "Int"]].map(([m, t]) => `<button data-act="piece-mode" data-id="${p.id}" data-val="${m}" aria-pressed="${p.mode === m}">${t}</button>`).join("")}</span>`;
-    return `<div class="item" aria-current="${open}"><div class="row"><button class="what" data-act="focus" data-id="${p.id}"><span>${PIECES[p.type]}${(p.type === "object" || p.type === "subject") && !p.data ? " · empty" : ""}</span></button>${mode}
-      <button class="tool" data-act="piece-inv" data-id="${p.id}" aria-pressed="${p.invert}" aria-label="Invert this part">${IC.invert}</button>
-      <button class="tool" data-act="piece-on" data-id="${p.id}" aria-pressed="${p.on}" aria-label="${p.on ? "Turn off" : "Turn on"}">${p.on ? IC.eyeOn : IC.eyeOff}</button>
-      <button class="tool" data-act="piece-del" data-id="${p.id}" aria-label="Remove">${IC.del}</button></div>${open ? `<div class="body">${body}</div>` : ""}</div>`; }).join("")}</div>
-    <div class="chips">${Object.entries(PIECES).map(([k, t]) => `<button class="chip" data-act="add-piece" data-val="${k}" ${busy ? "disabled" : ""}>+ ${t}</button>`).join("")}</div>`;
-  if (ps.length) h += `<div class="grid2">${slider("density", l)}${slider("feather", l)}</div><div class="chips">${chip("show-mask", "Show mask", state.showMask)}${chip("mask-inv", "Invert mask", l.mask.invert)}</div>`;
-  h += `<p class="note">${ps.length ? "Light shows where the mask is clear and is held back where it is tinted. The first part sets the area; each later part adds to it, subtracts from it, or intersects with it." : "No mask: this light reaches the whole photo."} Subject and Object use a small AI model on this device; nothing is uploaded.</p>`;
-  return h;
+    return accordion(open, p.id, ico(PIECE_ICON[p.type]), PIECES[p.type] + (empty ? " · empty" : ""), i === 0 ? "Base" : MODE_NAME[p.mode], eyeBtn("piece-on", p.id, p.on, PIECES[p.type]), body); }).join("");
+  let h = `${ps.length ? `<div>${items}</div>` : ""}<button class="btn btn-tonal addbtn" data-act="add-piece-menu" aria-haspopup="menu" aria-expanded="false" ${busy ? "disabled" : ""}>${ico("plus")}Add mask part</button>`;
+  if (ps.length) h += `<div class="grid-2">${slider("density", l)}${slider("feather", l)}</div>${sw("show-mask", "Show the mask on the photo", state.showMask)}${sw("mask-inv", "Invert the whole mask", l.mask.invert)}`;
+  return h + `<p class="t-caption">${ps.length ? "Light shows where the mask is clear and is held back where it is tinted. The first part sets the area; each later part adds to it, subtracts from it, or intersects with it." : "No mask: this light reaches the whole photo."} Subject and Object use a small AI model on this device; nothing is uploaded.</p>`;
 }
 function renderReadoutsOnly() { if (state.ui === "editor" && (state.section === "blurs" || state.section === "light")) renderPanel(); }
 
+/* ── menus: one floating design-system menu, anchored to the button that opened it ── */
+const pop = $("#pop"); let popAnchor = null, popKind = null;
+function openMenu(anchor, kind, items) {
+  if (popKind === kind && !pop.hidden) { closeMenu(); return; }
+  closeMenu(true);
+  pop.innerHTML = items.map(it => it === "sep" ? `<div class="sep" role="separator"></div>` :
+    `<button class="mi${it.danger ? " danger" : ""}" role="menuitem" data-act="${it.act}"${it.val ? ` data-val="${it.val}"` : ""}${it.id ? ` data-id="${it.id}"` : ""}${it.disabled ? " disabled" : ""}>${it.icon ? ico(it.icon) : ""}<span class="grow">${it.text}</span>${it.checked ? ico("check", "ok") : ""}</button>`).join("");
+  pop.hidden = false; popAnchor = anchor; popKind = kind; anchor.setAttribute("aria-expanded", "true");
+  const r = anchor.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight, top = $("#top").offsetHeight;
+  pop.style.left = clamp(r.right - w, 8, innerWidth - w - 8) + "px";
+  const above = r.top - h - 4 >= top; pop.style.top = (above ? r.top - h - 4 : Math.min(r.bottom + 4, innerHeight - h - 8)) + "px";
+  if (motionOK()) pop.animate([{ opacity: 0, transform: `translateY(${above ? 6 : -6}px) scale(.97)` }, { opacity: 1, transform: "none" }], { duration: 160, easing: EASE });
+  pop.querySelector(".mi:not([disabled])")?.focus({ preventScroll: true });
+}
+function closeMenu(quiet) {
+  if (pop.hidden) return; pop.hidden = true; popAnchor?.setAttribute("aria-expanded", "false");
+  if (!quiet && popAnchor?.isConnected) popAnchor.focus({ preventScroll: true });
+  popAnchor = popKind = null;
+}
+document.addEventListener("pointerdown", e => { if (!pop.hidden && !pop.contains(e.target) && !popAnchor?.contains(e.target)) closeMenu(true); }, true);
+pop.addEventListener("click", e => { const b = e.target.closest("button"); if (!b || b.disabled) return; closeMenu(true); onAct(b); });
+pop.addEventListener("keydown", e => {
+  if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return; e.preventDefault();
+  const items = [...pop.querySelectorAll(".mi:not([disabled])")], i = items.indexOf(document.activeElement);
+  items[(i + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length]?.focus();
+});
+panel.addEventListener("scroll", () => closeMenu(true), { passive: true });
+
 panel.addEventListener("input", e => {
   const k = e.target.dataset.sl, l = activeLayer();
-  if (k) { const s = SL[k], f = focusedItem(l); s.set(l, +e.target.value, f); $("#o-" + k).textContent = s.fmt(+e.target.value); if (!s.ui) { beginInteract(); endInteract(220); } else drawOverlay(); return; }
+  if (k) { const s = SL[k], f = focusedItem(l), v = +e.target.value; s.set(l, v, f); $("#o-" + k).textContent = s.fmt(v); e.target.closest(".slider").style.setProperty("--p", slP(s, v));
+    if (!s.ui) { beginInteract(); endInteract(220); } else drawOverlay(); return; }
   if (e.target.id === "customColor") { l.light.color = e.target.value; markDirty(); }
+});
+panel.addEventListener("dblclick", e => { // double-tap a slider to reset it
+  const k = e.target.dataset?.sl; if (!k) return; const s = SL[k], l = activeLayer(), f = focusedItem(l);
+  s.set(l, s.def, f); e.target.value = s.get(l, f); $("#o-" + k).textContent = s.fmt(s.get(l, f)); e.target.closest(".slider").style.setProperty("--p", slP(s, s.get(l, f)));
+  if (!s.ui) { commit(); markDirty(); } else drawOverlay(); toast(`${s.label} reset`, 1200);
 });
 panel.addEventListener("change", async e => {
   const t = e.target, l = activeLayer();
@@ -982,15 +1028,17 @@ panel.addEventListener("change", async e => {
   if (t.id === "replacePhoto" && t.files[0]) openPhoto(t.files[0]);
   if (t.id === "lightFile" && t.files[0]) { try { l.light.key = await assetFromFile(t.files[0]); commit(); renderPanel(); markDirty(); } catch (err) { toast(err.message); } }
 });
-panel.addEventListener("click", async e => {
+panel.addEventListener("click", e => {
   if (Date.now() - suppressClick < 350) return;
-  const b = e.target.closest("button,[data-lib]"); if (!b) return; const l = activeLayer();
+  const b = e.target.closest("button,[data-lib]"); if (!b || b.disabled) return; onAct(b);
+});
+async function onAct(b) {
+  const l = activeLayer();
   if (b.dataset.lib) { l.light.key = await libraryAsset(b.dataset.lib); commit(); renderPanel(); markDirty(); return; }
   if (b.dataset.seg) {
     const v = b.dataset.val, k = b.dataset.seg, f = focusedItem(l);
     if (k === "section") { if (v !== state.section) go("section", () => { state.section = v; state.focus = null; state.drawing = null; }); markDirty(); return; }
     if (k === "brush-mode") { state.brush.erase = v === "erase"; renderPanel(); return; }
-    if (k === "blend") l.blend = v;
     if (k === "method") f.method = v;
     if (k === "ltype" && v !== l.light.type) {
       if (v === "radial") l.light = radialLight({ x: l.light.x, y: l.light.y }); else l.light = imageLight(await libraryAsset("window"), { x: l.light.x, y: l.light.y });
@@ -1010,12 +1058,21 @@ panel.addEventListener("click", async e => {
     case "prev": case "next": switchLayer(act === "next" ? 1 : -1); break;
     case "eye": { const x = state.layers.find(y => y.id === id); x.visible = !x.visible; commit(); renderPanel(); markDirty(); break; }
     case "solo": state.solo = !state.solo; renderPanel(); markDirty(); break;
-    case "dup": { const c = cloneLayer(l); c.id = uid(); c.name = l.name + " copy"; c.blurs.forEach(x => x.id = uid()); c.mask.pieces.forEach(x => x.id = uid()); state.layers.splice(state.layers.indexOf(l) + 1, 0, c); go("forward", () => { state.activeId = c.id; }); commit(); markDirty(); break; }
-    case "del-layer": { const i = state.layers.indexOf(l); state.layers.splice(i, 1); go("back", () => { state.activeId = (state.layers[Math.max(0, i - 1)] || {}).id || null; state.ui = "list"; }); commit(); markDirty(); toast(`Deleted ${l.name}. Undo brings it back.`); break; }
+    case "more": { const list = [...state.layers].reverse(), i = list.indexOf(l);
+      openMenu(b, "more", [{ act: "rename", icon: "edit", text: "Rename" }, { act: "dup", icon: "copy", text: "Duplicate" },
+        { act: "eye", id: l.id, icon: l.visible ? "eye-off" : "eye", text: l.visible ? "Hide this light" : "Show this light" },
+        { act: "prev", icon: "chevron-up", text: "Light above", disabled: i === 0 }, { act: "next", icon: "chevron-down", text: "Light below", disabled: i === list.length - 1 },
+        "sep", { act: "del-layer", icon: "trash", text: "Delete light", danger: true }]); break; }
+    case "blend-menu": openMenu(b, "blend", BLENDS.map(([k, t]) => ({ act: "blend", val: k, text: t, checked: l.blend === k }))); break;
+    case "blend": l.blend = b.dataset.val; commit(); renderPanel(); markDirty(); break;
+    case "rename": openRename(l); break;
+    case "dup": { const c = cloneLayer(l); c.id = uid(); c.name = l.name + " copy"; c.blurs.forEach(x => x.id = uid()); c.mask.pieces.forEach(x => x.id = uid()); state.layers.splice(state.layers.indexOf(l) + 1, 0, c); go("forward", () => { state.activeId = c.id; }); commit(); markDirty(); toast(`Duplicated ${l.name}.`); break; }
+    case "del-layer": { const i = state.layers.indexOf(l); state.layers.splice(i, 1); go("back", () => { state.activeId = (state.layers[Math.max(0, i - 1)] || {}).id || null; state.ui = "list"; }); commit(); markDirty(); toast(`Deleted ${l.name}.`, 5000, { label: "Undo", fn: undo }); break; }
     case "color": l.light.color = b.dataset.val; commit(); renderPanel(); markDirty(); break;
     case "fine": state.fine = !state.fine; renderPanel(); break;
     case "draw-light": state.drawing = state.drawing ? null : { kind: "light" }; renderPanel(); break;
     case "focus": go("expand", () => { state.focus = state.focus === id ? null : id; state.drawing = null; }); markDirty(); break;
+    case "add-blur-menu": openMenu(b, "blur", [{ act: "add-radial-blur", icon: "radial", text: "Radial blur · zoom or spin" }, { act: "add-gauss-blur", icon: "blur", text: "Gaussian blur" }]); break;
     case "add-radial-blur": { const x = radialBlur(0.4, 0.5, 0.5); l.blurs.push(x); state.focus = x.id; commit(); renderPanel(); markDirty(); break; }
     case "add-gauss-blur": { const x = gaussBlur(0.02); l.blurs.push(x); state.focus = x.id; commit(); renderPanel(); markDirty(); break; }
     case "blur-on": blur.on = !blur.on; commit(); renderPanel(); markDirty(); break;
@@ -1023,6 +1080,7 @@ panel.addEventListener("click", async e => {
     case "blur-down": move(l.blurs, blur, 1); commit(); renderPanel(); markDirty(); break;
     case "blur-del": l.blurs.splice(l.blurs.indexOf(blur), 1); commit(); renderPanel(); markDirty(); break;
     case "center-reset": { const f = focusedItem(l); f.cx = 0.5; f.cy = 0.5; commit(); renderPanel(); markDirty(); break; }
+    case "add-piece-menu": openMenu(b, "piece", Object.entries(PIECES).map(([k, t]) => ({ act: "add-piece", val: k, icon: PIECE_ICON[k], text: t }))); break;
     case "add-piece": addPiece(l, b.dataset.val); break;
     case "piece-mode": piece.mode = b.dataset.val; commit(); renderPanel(); markDirty(); break;
     case "piece-inv": piece.invert = !piece.invert; commit(); renderPanel(); markDirty(); break;
@@ -1032,7 +1090,7 @@ panel.addEventListener("click", async e => {
     case "show-mask": state.showMask = !state.showMask; renderPanel(); markDirty(); break;
     case "mask-inv": l.mask.invert = !l.mask.invert; commit(); renderPanel(); markDirty(); break;
   }
-});
+}
 async function addPiece(l, type) {
   const p = newPiece(type);
   if (type === "brush") p.data = zeros();
@@ -1049,11 +1107,17 @@ function switchLayer(d) {
   const list = [...state.layers].reverse(), i = list.findIndex(x => x.id === state.activeId), n = list[i + d]; if (!n) return;
   go(d > 0 ? "forward" : "back", () => { state.activeId = n.id; state.focus = null; state.drawing = null; }); markDirty();
 }
+const sheetCard = (title, body, actions = `<button class="btn btn-text c-neutral" data-close>Cancel</button>`) => `<div class="mcard drawer drawer-bottom"><div class="grabber"></div><h3 class="t-h5">${title}</h3>${body}<div class="actions">${actions}</div></div>`;
+const option = (attr, icon, title, sub, tag) => `<button class="list-item clickable" ${attr}>${ico(icon)}<span class="txt"><span class="pri">${title}</span><span class="sec">${sub}</span></span><span class="t-mono">${tag}</span></button>`;
 function openNewLight() {
-  openModal(`<div class="card"><h3>New light</h3><div class="opts">
-    <button class="opt" data-new="radial"><span>Radial gradient<small>Draw it on the photo: press at the center and drag out</small></span><span class="fmt">Screen</span></button>
-    <button class="opt" data-new="image"><span>Light image<small>Window, bokeh, light leak, sun flare, or your own</small></span><span class="fmt">Screen</span></button>
-  </div><button class="chip" data-close>Cancel</button></div>`);
+  openModal(sheetCard("New light", `<div class="list opts">${option('data-new="radial"', "radial", "Radial gradient", "Draw it on the photo: press at the center and drag out", "Screen")}
+    ${option('data-new="image"', "image", "Light image", "Window, bokeh, light leak, sun flare, or your own", "Screen")}</div>`));
+}
+function openRename(l) {
+  openModal(`<form class="mcard drawer drawer-bottom" id="renameForm"><div class="grabber"></div><h3 class="t-h5">Rename light</h3>
+    <div class="field field-filled"><label class="lbl" for="renameInput">Name</label><div class="ctl"><input id="renameInput" value="${esc(l.name)}" maxlength="60" autocomplete="off" enterkeyhint="done"></div></div>
+    <div class="actions"><button type="button" class="btn btn-text c-neutral" data-close>Cancel</button><button type="submit" class="btn btn-contained">Save</button></div></form>`);
+  setTimeout(() => { const i = $("#renameInput"); if (i) { i.focus(); i.select(); } }, 60);
 }
 async function newLight(kind) {
   closeModal(); const n = state.layers.length + 1;
@@ -1063,10 +1127,26 @@ async function newLight(kind) {
   commit(); markDirty(); if (kind === "radial") toast("Press where the light goes and drag outward.");
 }
 
+/* ── the sheet's grabber: tap or swipe up for a taller panel, swipe down to shrink it ── */
+const grab = $("#grab"); let grabY = null;
+function setTall(v) {
+  if (state.tall === v) return;
+  morphSheet(() => { state.tall = v; $("#sheet").classList.toggle("tall", v); grab.setAttribute("aria-label", v ? "Make the panel shorter" : "Make the panel taller"); fitView(); });
+}
+function grabTo(dir) {
+  if (state.ui === "bar") { if (dir >= 0) go("up", () => { state.ui = "list"; }); return; }
+  if (dir > 0) setTall(true); else if (dir < 0) { if (state.tall) setTall(false); else if (state.ui === "list") go("down", () => { state.ui = "bar"; }); }
+  else setTall(!state.tall);
+}
+grab.addEventListener("pointerdown", e => { grabY = e.clientY; try { grab.setPointerCapture(e.pointerId); } catch {} });
+grab.addEventListener("pointerup", e => { if (grabY == null) return; const dy = e.clientY - grabY; grabY = null; grabTo(Math.abs(dy) < 12 ? 0 : dy < 0 ? 1 : -1); });
+grab.addEventListener("pointercancel", () => { grabY = null; });
+grab.addEventListener("click", e => { if (e.detail === 0) grabTo(0); }); // keyboard
+
 /* ── reordering the light list: press the handle (or long-press a row), drag, release ── */
 let sort = null, longPress = null, swipe = null, suppressClick = 0;
 panel.addEventListener("pointerdown", e => {
-  const row = e.target.closest(".light[data-id]");
+  const row = e.target.closest(".layer-row[data-id]");
   if (row && e.target.closest("[data-grip]")) { e.preventDefault(); startSort(row, e); return; }
   if (row && e.pointerType !== "mouse" && !e.target.closest(".eye")) {
     longPress = { row, e, x: e.clientX, y: e.clientY, t: setTimeout(() => { if (longPress) { startSort(longPress.row, longPress.e); longPress = null; } }, 420) };
@@ -1075,7 +1155,7 @@ panel.addEventListener("pointerdown", e => {
 });
 panel.addEventListener("touchmove", e => { if (sort) e.preventDefault(); }, { passive: false }); // keep the list from scrolling under a drag
 function startSort(row, e) {
-  const rows = [...panel.querySelectorAll(".light[data-id]")], from = rows.indexOf(row);
+  const rows = [...panel.querySelectorAll(".layer-row[data-id]")], from = rows.indexOf(row);
   sort = { row, rows, from, to: from, y0: e.clientY, s0: panel.scrollTop, tops: rows.map(r => r.offsetTop), hs: rows.map(r => r.offsetHeight) };
   sort.gap = rows.length > 1 ? rows[1].offsetTop - rows[0].offsetTop - rows[0].offsetHeight : 4;
   row.classList.add("dragging"); row.parentElement.classList.add("sorting");
@@ -1101,7 +1181,7 @@ function endSort(cancel) {
   };
   if (!motionOK()) { finish(); return; }
   if (cancel) rows.forEach(r => { if (r !== row) r.style.transform = ""; });
-  row.style.transition = "transform .18s cubic-bezier(.2,.8,.2,1)"; row.style.transform = `translateY(${offset}px)`;
+  row.style.transition = `transform 180ms ${EASE}`; row.style.transform = `translateY(${offset}px)`;
   setTimeout(finish, 190);
 }
 document.addEventListener("pointermove", e => {
@@ -1150,22 +1230,31 @@ function go(kind, change) {
     panel.animate([{ opacity: 0, transform: `translateY(${kind === "up" ? 12 : -8}px)` }, { opacity: 1, transform: "none" }], { duration: 300, easing: EASE });
   } else if (kind === "section") {
     const ni = SECTIONS.indexOf(state.section), dir = Math.sign(ni - oldSec);
-    panel.querySelector(".sec")?.animate([{ opacity: 0, transform: `translateX(${28 * dir}px)` }, { opacity: 1, transform: "none" }], { duration: 260, easing: EASE });
-    panel.querySelector(".seg.tabs .ind")?.animate([{ transform: `translateX(${oldSec * 100}%)` }, { transform: `translateX(${ni * 100}%)` }], { duration: 280, easing: EASE });
+    panel.querySelector(".tabpanel")?.animate([{ opacity: 0, transform: `translateX(${28 * dir}px)` }, { opacity: 1, transform: "none" }], { duration: 260, easing: EASE });
+    panel.querySelector(".tabs .ind")?.animate([{ transform: `translateX(${oldSec * 100}%)` }, { transform: `translateX(${ni * 100}%)` }], { duration: 280, easing: EASE });
   } else if (kind === "expand") {
-    const body = panel.querySelector('.item[aria-current="true"] .body');
+    const body = panel.querySelector('.accordion[aria-expanded="true"] .det');
     if (body) { const h = body.offsetHeight; body.style.overflow = "hidden";
       body.animate([{ height: "0px", opacity: 0, paddingTop: "0px", paddingBottom: "0px" }, { height: h + "px", opacity: 1 }], { duration: 240, easing: EASE }).finished.finally(() => { body.style.overflow = ""; }); }
   }
 }
 function arrive(ids) { // newly added lights fade into the list
   if (!motionOK()) return;
-  ids.forEach((id, i) => panel.querySelector(`.light[data-id="${id}"]`)?.animate([{ opacity: 0, transform: "translateY(-10px)" }, { opacity: 1, transform: "none" }], { duration: 320, delay: 70 * i, easing: EASE, fill: "backwards" }));
+  ids.forEach((id, i) => panel.querySelector(`.layer-row[data-id="${id}"]`)?.animate([{ opacity: 0, transform: "translateY(-10px)" }, { opacity: 1, transform: "none" }], { duration: 320, delay: 70 * i, easing: EASE, fill: "backwards" }));
 }
 
-$("#undo").onclick = undo; $("#redo").onclick = redo;
-addEventListener("keydown", e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") { e.preventDefault(); e.shiftKey ? redo() : undo(); } });
-let toastT = 0; function toast(msg, ms = 2600) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => (t.hidden = true), ms); }
+$("#undo").onclick = undo; $("#redo").onclick = redo; $("#openBtn").onclick = () => $("#openFile").click();
+addEventListener("keydown", e => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z" && !e.target.closest?.("input[type=text],input:not([type])")) { e.preventDefault(); e.shiftKey ? redo() : undo(); }
+  if (e.key === "Escape") { if (!pop.hidden) closeMenu(); else closeModal(); }
+});
+let toastT = 0;
+function toast(msg, ms = 2600, action) {
+  const t = $("#toast"); t.innerHTML = `<span class="grow">${esc(msg)}</span>${action ? `<button class="btn btn-text btn-sm">${esc(action.label)}</button>` : ""}`;
+  t.classList.toggle("plain", !action); if (action) t.querySelector("button").onclick = () => { t.hidden = true; action.fn(); };
+  t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => (t.hidden = true), ms);
+}
+
 
 /* ═════════════════════════ documents, projects, export ═════════════════════════ */
 function loadImage(src) { return new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error("That file could not be read as an image.")); im.src = src; }); }
@@ -1184,7 +1273,8 @@ async function openPhoto(file) {
     for (const l of state.layers) l.mask.pieces = [];
     resetHistory(); showEditor(); markDirty();
     toast(hadMasks ? "Photo opened. Lights carry over; their masks were cleared because they belonged to the old photo." : "Photo opened. Your lights carry over.", 3600);
-  } catch (err) { toast(err.message); }
+    return true;
+  } catch (err) { toast(err.message); return false; }
 }
 function openAny(f) { if (/\.json$/i.test(f.name) || f.type === "application/json") openProject(f); else if (/^image\//.test(f.type) || /\.(jpe?g|png|webp)$/i.test(f.name)) openPhoto(f); else toast("Lumière opens JPEG, PNG and WebP photos, and Lumière project files."); }
 for (const id of ["#openFile", "#dropFile"]) $(id).addEventListener("change", e => { const f = e.target.files[0]; e.target.value = ""; if (f) openAny(f); });
@@ -1225,13 +1315,13 @@ async function offer(filename, data, previewBlob) {
     a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 10000);
     toast("Saved " + filename); closeModal(); return;
   }
-  if (previewBlob) { const url = URL.createObjectURL(previewBlob); openModal(`<div class="card"><h3>Your export</h3><img class="result" src="${url}" alt="Exported photograph"><p class="hint">Saving files is not available in this view. On a phone, press and hold the image to save it.</p><button class="chip" data-close>Close</button></div>`); }
+  if (previewBlob) { const url = URL.createObjectURL(previewBlob); openModal(sheetCard("Your export", `<img class="result" src="${url}" alt="Exported photograph"><p class="t-body2">Saving files is not available in this view. On a phone, press and hold the image to save it.</p>`, `<button class="btn btn-text c-neutral" data-close>Close</button>`)); }
   else toast("Saving files is not available in this view.");
 }
 let modalToken = 0;
 function openModal(html) {
   const m = $("#modal"); modalToken++; m.getAnimations?.().forEach(a => a.cancel()); m.style.pointerEvents = ""; m.innerHTML = html; m.hidden = false;
-  if (motionOK()) { m.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, easing: "ease-out" }); m.querySelector(".card")?.animate([{ transform: "translateY(100%)" }, { transform: "none" }], { duration: 320, easing: EASE }); }
+  if (motionOK()) { m.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, easing: "ease-out" }); m.querySelector(".mcard")?.animate([{ transform: "translateY(100%)" }, { transform: "none" }], { duration: 320, easing: EASE }); }
 }
 function closeModal() {
   const m = $("#modal"); if (m.hidden) return; const t = ++modalToken;
@@ -1239,16 +1329,14 @@ function closeModal() {
   m.style.pointerEvents = "none"; // a closing sheet never blocks the photo
   if (!motionOK()) { done(); return; }
   setTimeout(done, 260);
-  m.querySelector(".card")?.animate([{ transform: "none" }, { transform: "translateY(100%)" }], { duration: 220, easing: "cubic-bezier(.4,0,1,1)", fill: "forwards" });
+  m.querySelector(".mcard")?.animate([{ transform: "none" }, { transform: "translateY(100%)" }], { duration: 220, easing: "cubic-bezier(.4,0,1,1)", fill: "forwards" });
   m.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, fill: "forwards" }).finished.then(done, done);
 }
 $("#exportBtn").onclick = () => {
   const [W, H, s] = exportSize(), note = s < 1 ? ` (reduced from ${state.doc.w}×${state.doc.h}: browser limit)` : "";
-  openModal(`<div class="card"><h3>Export</h3><div class="opts">
-    <button class="opt" data-exp="jpg"><span>Photograph<small>${W}×${H} px${note}</small></span><span class="fmt">JPEG</span></button>
-    <button class="opt" data-exp="png"><span>Photograph, lossless<small>${W}×${H} px</small></span><span class="fmt">PNG</span></button>
-    <button class="opt" data-exp="proj"><span>Editable project<small>Photo and every light with its blurs and masks</small></span><span class="fmt">JSON</span></button></div>
-    <p class="hint" id="expStatus"></p><button class="chip" data-close>Cancel</button></div>`);
+  openModal(sheetCard("Export", `<div class="list opts">${option('data-exp="jpg"', "image", "Photograph", `${W}×${H} px${note}`, "JPEG")}
+    ${option('data-exp="png"', "image", "Photograph, lossless", `${W}×${H} px`, "PNG")}
+    ${option('data-exp="proj"', "folder", "Editable project", "Photo and every light with its blurs and masks", "JSON")}</div><p class="t-caption" id="expStatus" aria-live="polite"></p>`));
 };
 $("#modal").addEventListener("click", async e => {
   if (e.target.id === "modal" || e.target.closest("[data-close]")) { closeModal(); return; }
@@ -1258,6 +1346,10 @@ $("#modal").addEventListener("click", async e => {
   if (k === "proj") { await offer(name + ".lumiere.json", projectJSON()); return; }
   st.textContent = "Rendering at full resolution…"; await new Promise(r => setTimeout(r, 30));
   const t0 = performance.now(), blob = await renderFull(k); st.textContent = `Rendered in ${((performance.now() - t0) / 1000).toFixed(1)} s.`; await offer(`${name}-lit.${k}`, blob, blob);
+});
+$("#modal").addEventListener("submit", e => {
+  e.preventDefault(); if (e.target.id !== "renameForm") return;
+  const v = $("#renameInput").value.trim(), l = activeLayer(); if (v && l && v !== l.name) { l.name = v; commit(); renderPanel(); } closeModal();
 });
 
 /* ═════════════════════════ sample photograph ═════════════════════════ */
@@ -1304,10 +1396,14 @@ addEventListener("dragleave", e => { if (!hasFiles(e)) return; if (--dragDepth <
 addEventListener("drop", e => { if (!hasFiles(e)) return; e.preventDefault(); endDrag(); const f = e.dataTransfer.files[0]; if (f) openAny(f); });
 function endDrag() { dragDepth = 0; const d = $("#drop"); d.classList.remove("over"); if (d.classList.contains("replace")) { d.classList.remove("replace"); d.hidden = true; $("#dropTitle").textContent = "Add a photograph"; $("#dropHint").textContent = DROP_HINT; } }
 $("#trySample").onclick = () => loadSample().catch(err => toast(err.message));
+// Start-screen presets: choose the photo first, then the preset is applied to it.
+let pendingPreset = null;
+$("#startPresets").addEventListener("click", e => { const c = e.target.closest("[data-start-preset]"); if (!c) return; pendingPreset = c.dataset.startPreset; $("#presetFile").click(); });
+$("#presetFile").addEventListener("change", async e => { const f = e.target.files[0], id = pendingPreset; e.target.value = ""; pendingPreset = null; if (f && id && await openPhoto(f)) applyPreset(id); });
 
 const DROP_HINT = matchMedia("(pointer: coarse)").matches ? "Choose a JPEG, PNG or WebP photo from your library." : "Drop a JPEG, PNG or WebP here, or click to choose one.";
 async function boot() {
-  $("#dropHint").textContent = DROP_HINT; resize(); $("#drop").hidden = false; renderPanel(); requestAnimationFrame(loop);
+  $("#dropHint").textContent = DROP_HINT; $("#startPresets").innerHTML = presetCards("data-start-preset"); resize(); $("#drop").hidden = false; renderPanel(); requestAnimationFrame(loop);
 }
 async function loadSample() {
   const url = makeSample().toDataURL("image/jpeg", 0.92), img = await loadImage(url); setDocument(img, url, "dahlia-sample");
