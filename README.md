@@ -87,6 +87,7 @@ outputs with `tools/convert_sam2.py --reference photo.jpg --ref-out REF` and run
 | `tests/smoke.mjs` | Headless browser smoke test |
 | `design-system/` | The "Darkroom" design system: tokens (`styles.css`), living style guide with Dev Mode and Copy-as-prompt (`index.html`), concept screens, icon sprite |
 | `docs/PLAN.md` | Product and design plan: the layer model, interface and roadmap |
+| `docs/bug-ios-black-screen.md` | Open bug: the page goes black on iPhone during Select Subject; measurements, diagnosis and the fixes planned |
 | `docs/ai-models.md` | Plan for on-device AI: candidate models (SAM 2, Depth Anything, BiRefNet), licenses, evaluation |
 | `docs/photocraft-evaluation.md` | Why the app does not build on PhotoCraft (measurements) |
 

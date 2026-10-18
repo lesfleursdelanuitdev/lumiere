@@ -104,7 +104,9 @@ Why not PhotoCraft: its filters run on one CPU core in the browser; radial blur 
 
 ## 5. Roadmap
 
-1. **Test on real phones.** A recent iPhone, an older iPhone and two Android phones: frame rate
+1. **Fix the iPhone black screen** (Select Subject uses too much GPU memory): see
+   [bug-ios-black-screen.md](bug-ios-black-screen.md).
+1b. **Test on real phones.** A recent iPhone, an older iPhone and two Android phones: frame rate
    while dragging (the app shows it), selection time, memory with large photos.
 2. **Selection quality on your own photographs.** Fine petals, translucent petals, busy
    backgrounds. If U²-Net-p is not good enough, try a larger model (for example BiRefNet, MIT
