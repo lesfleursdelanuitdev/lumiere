@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lumière · Concept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+/* concept-page chrome only: the SCREENS are built from styles.css component classes */
+body{font-family:var(--font-body);color:var(--text);background:var(--sunken);padding:72px 16px 80px;display:flex;flex-direction:column;align-items:center}
+.head{max-width:680px;text-align:center;margin-bottom:28px}
+.head p{color:var(--text-secondary);font-size:14px;margin-top:8px;line-height:1.6}
+.two{display:flex;gap:44px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+.colm{display:flex;flex-direction:column;align-items:center;gap:12px}
+.colm .label{font:600 11px var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--text-disabled)}
+.device{position:relative;width:360px;height:760px;background:var(--bg);border:8px solid #000;border-radius:44px;overflow:hidden;box-shadow:var(--elev-3);display:flex;flex-direction:column}
+.status{height:28px;flex:none}
+/* layout glue only (no new components) */
+.scrollbody{flex:1;overflow:hidden;padding:0 var(--sp-16) var(--sp-16);display:flex;flex-direction:column;gap:var(--sp-16)}
+.bigtype{font:800 40px/1.02 var(--font-display);letter-spacing:-.035em;color:var(--text);margin-top:var(--sp-24)}
+.bigtype i{font-style:normal;color:var(--primary)}
+.drop{border:1.5px dashed color-mix(in srgb,var(--primary) 45%,var(--outline));border-radius:var(--r-lg);padding:var(--sp-24) var(--sp-16);display:grid;justify-items:center;gap:var(--sp-8);text-align:center;background:var(--safelight-glow),var(--paper)}
+.drop .ico{color:var(--primary)}
+.canvasArea{position:absolute;inset:0}
+.canvasArea .photo{position:absolute;inset:0}
+.handle{position:absolute;transform:translate(-50%,-50%)}
+.ellipse{position:absolute;border:1.5px dashed rgb(250 101 61 / .7);border-radius:50%;transform:translate(-50%,-50%) rotate(-24deg)}
+.sheet{position:absolute;left:0;right:0;bottom:0;padding:0 var(--sp-12) var(--sp-12)}
+.ed-head{display:grid;grid-template-columns:var(--target) minmax(0,1fr) var(--target) var(--target);align-items:center}
+.ed-head .ttl{min-width:0}
+.ed-head .ttl .t-h5{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.blendpill{display:inline-flex}
+.q{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:var(--sp-12)}
+.floatmenu{position:absolute;right:16px;bottom:404px;z-index:3}
+.backlink{position:fixed;top:16px;left:16px;z-index:50;text-decoration:none}
+.legend{max-width:600px;margin-top:22px;font:13px/1.65 var(--font-body);color:var(--text-secondary);text-align:center}
+.legend b{color:var(--text);font-weight:600}
+.callout{font:500 10px var(--font-mono);color:var(--secondary);letter-spacing:.02em}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <!-- app chrome -->
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+  <symbol id="i-redo" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.75"/><path d="m21 16-5-5-9 9"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4"/><path d="m7 9 5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16v4M17 18h4"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10 12 4l8 6v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></symbol>
+  <!-- light, blur, mask -->
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-blur" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/></symbol>
+  <symbol id="i-mask" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-radial" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5" stroke-dasharray="2 2.4"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-linear" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18" /><path d="M3 15h18" stroke-dasharray="2 2.4"/></symbol>
+  <symbol id="i-brush" viewBox="0 0 24 24"><path d="M14 4l6 6-8.5 8.5a3 3 0 0 1-2 .9L5 20l.6-4.5a3 3 0 0 1 .9-2z"/><path d="M12 6l6 6"/></symbol>
+  <symbol id="i-object" viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><circle cx="12" cy="12" r="3.5"/></symbol>
+  <symbol id="i-flower" viewBox="0 0 24 24"><circle cx="12" cy="9" r="2"/><path d="M12 7c0-2.5 1.5-4 3-4 0 2-1 3.5-3 4zM12 7c0-2.5-1.5-4-3-4 0 2 1 3.5 3 4zM14 9c2.5 0 4 1.5 4 3-2 0-3.5-1-4-3zM10 9c-2.5 0-4 1.5-4 3 2 0 3.5-1 4-3z"/><path d="M12 11v10M12 17c-1.5-1.5-3.5-2-5-1.5M12 19c1.5-1.5 3.5-2 5-1.5"/></symbol>
+  <symbol id="i-invert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-solo" viewBox="0 0 24 24"><path d="M12 3v3"/><path d="M8 7h8l3 11H5z"/><path d="M9 21h6"/></symbol>
+  <!-- list + editing -->
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3 3.8M6.5 6.6A17 17 0 0 0 2 12s3.5 7 10 7a9.6 9.6 0 0 0 4.4-1"/></symbol>
+  <symbol id="i-grip" viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.4" fill="currentColor" stroke="none"/><circle cx="15" cy="6" r="1.4" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="9" cy="18" r="1.4" fill="currentColor" stroke="none"/><circle cx="15" cy="18" r="1.4" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-chevron-up" viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></symbol>
+  <symbol id="i-more-v" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.6" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-more-h" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13 7 4 4"/></symbol>
+  <!-- status -->
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></symbol>
+  <symbol id="i-warning" viewBox="0 0 24 24"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17v.5"/></symbol>
+  <symbol id="i-error" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></symbol>
+  <symbol id="i-success" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></symbol>
+</svg>
+<a class="btn btn-tonal backlink" href="index.html"><svg class="ico"><use href="#i-chevron-left"/></svg>Back to style guide</a>
+
+<div class="head">
+  <div class="t-overline" style="color:var(--primary)">Concept · Darkroom</div>
+  <div class="t-h2" style="margin-top:6px">Start screen + layer editor</div>
+  <p>Two static screens built only from the design system's components: where Lumière opens, and the light editor reworked from the design critique (two-row header with a ⋯ menu, blend as a select, the main controls first, 44&nbsp;px targets).</p>
+</div>
+
+<div class="two">
+  <!-- ════════ SCREEN 1 · FIRST VIEW: empty canvas, big type, drop zone, presets in a 2-col grid ════════ -->
+  <div class="colm">
+    <div class="label">First view · start</div>
+    <div class="device">
+      <div class="status"></div>
+      <div class="appbar transparent"><div class="wordmark grow" style="padding-left:4px">Lumi<i>è</i>re</div><button class="icon-btn" disabled aria-label="Undo"><svg class="ico"><use href="#i-undo"/></svg></button><button class="icon-btn" disabled aria-label="Redo"><svg class="ico"><use href="#i-redo"/></svg></button><button class="btn btn-contained btn-sm" disabled style="margin:0 8px 0 4px">Export</button></div>
+      <div class="scrollbody">
+        <div class="bigtype">Add light<br>to the <i>night.</i></div>
+        <div class="drop">
+          <svg class="ico ico--xl"><use href="#i-upload"/></svg>
+          <div class="t-h6">Add a photograph</div>
+          <div class="t-body2">Choose a JPEG, PNG or WebP from your library.</div>
+          <button class="btn btn-contained" style="margin-top:4px"><svg class="ico"><use href="#i-image"/></svg>Choose a photo</button>
+        </div>
+        <div class="row between"><span class="t-overline">Or start from a preset</span><a class="link link-quiet t-caption">Try a sample</a></div>
+        <div class="grid-2" style="--gap:var(--sp-8)">
+          <div class="card clickable"><div class="media" style="aspect-ratio:16/10;background:radial-gradient(circle at 50% 46%, #ffb87b 0 16%, rgb(176 102 51 / .5) 38%, var(--sunken) 72%)"></div><div class="content" style="padding:8px 10px 10px"><div class="t-subtitle2">Halo</div><div class="t-caption">Glow behind</div></div></div>
+          <div class="card clickable"><div class="media" style="aspect-ratio:16/10;background:linear-gradient(150deg,#fff3df 0 10%,rgb(246 220 180 / .3) 30%,var(--sunken) 66%)"></div><div class="content" style="padding:8px 10px 10px"><div class="t-subtitle2">Window beams</div><div class="t-caption">From above</div></div></div>
+          <div class="card clickable"><div class="media" style="aspect-ratio:16/10;background:radial-gradient(circle at 50% 46%, var(--sunken) 0 22%, #e6ebff 27%, rgb(111 122 176 / .35) 42%, var(--sunken) 66%)"></div><div class="content" style="padding:8px 10px 10px"><div class="t-subtitle2">Moon rim</div><div class="t-caption">Cool edge</div></div></div>
+          <div class="card clickable"><div class="media" style="aspect-ratio:16/10;background:radial-gradient(ellipse 70% 60% at 0% 45%, #ff9a3c 0 22%, rgb(255 122 42 / .25) 55%, var(--sunken) 85%)"></div><div class="content" style="padding:8px 10px 10px"><div class="t-subtitle2">Golden side</div><div class="t-caption">Low warm sun</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ SCREEN 2 · DETAIL: the layer editor over a full-bleed photo (raised drawer) ════════ -->
+  <div class="colm">
+    <div class="label">Detail · light editor</div>
+    <div class="device">
+      <div class="canvasArea">
+        <div class="photo"></div>
+        <div class="ellipse" style="left:36%;top:30%;width:250px;height:190px"></div>
+        <span class="handle cross" style="left:36%;top:30%"></span>
+        <span class="handle axis" style="left:68%;top:15.5%"></span>
+        <span class="handle axis" style="left:24%;top:16%"></span>
+      </div>
+      <div class="status" style="position:relative;z-index:1"></div>
+      <div class="appbar transparent" style="position:relative;z-index:1"><div class="wordmark grow" style="padding-left:4px">Lumi<i>è</i>re</div><button class="icon-btn" aria-label="Undo"><svg class="ico"><use href="#i-undo"/></svg></button><button class="icon-btn" disabled aria-label="Redo"><svg class="ico"><use href="#i-redo"/></svg></button><button class="btn btn-contained btn-sm" style="margin:0 8px 0 4px">Export</button></div>
+
+      <div class="menu floatmenu" role="menu"><div class="mi"><svg class="ico"><use href="#i-edit"/></svg>Rename</div><div class="mi"><svg class="ico"><use href="#i-copy"/></svg>Duplicate</div><div class="mi"><svg class="ico"><use href="#i-sparkle"/></svg>Save as recipe</div><div class="sep"></div><div class="mi danger"><svg class="ico"><use href="#i-trash"/></svg>Delete light</div></div>
+
+      <div class="drawer drawer-bottom sheet">
+        <div class="grabber"></div>
+        <!-- row 1: back · name · solo · more -->
+        <div class="ed-head">
+          <button class="icon-btn" aria-label="Back to lights"><svg class="ico"><use href="#i-chevron-left"/></svg></button>
+          <div class="ttl"><div class="t-h5">Halo · 3200K</div><div class="t-mono" style="font-size:11px">2 of 3 · swipe for next</div></div>
+          <button class="icon-btn" aria-pressed="false" aria-label="Show this light alone"><svg class="ico"><use href="#i-solo"/></svg></button>
+          <button class="icon-btn" aria-pressed="true" aria-label="More"><svg class="ico"><use href="#i-more-v"/></svg></button>
+        </div>
+        <!-- row 2: opacity + blend select -->
+        <div class="q" style="margin-top:2px">
+          <div class="slider" style="--to:85%"><div class="head"><span>Opacity</span><span class="t-mono">85%</span></div><div class="rail" style="height:36px"><span class="fill"></span><span class="thumb"></span></div></div>
+          <span class="chip blendpill" style="margin-bottom:6px">Screen<svg class="ico"><use href="#i-chevron-down"/></svg></span>
+        </div>
+        <div class="tabs" role="tablist" style="--x:0%;margin-top:2px"><button class="tab" role="tab" aria-selected="true"><svg class="ico ico--sm"><use href="#i-sun"/></svg>Light</button><button class="tab" role="tab" aria-selected="false"><svg class="ico ico--sm"><use href="#i-blur"/></svg>Blurs <span class="t-mono">2</span></button><button class="tab" role="tab" aria-selected="false"><svg class="ico ico--sm"><use href="#i-mask"/></svg>Mask <span class="t-mono">1</span></button><span class="ind"></span></div>
+        <!-- Light tab: the main controls first -->
+        <div class="stack" style="--gap:var(--sp-8);margin-top:var(--sp-12)">
+          <div class="swatch-row">
+            <button class="swatch" style="--sw:#FF8400"><i></i>1900K</button><button class="swatch" style="--sw:#FFA757"><i></i>2700K</button><button class="swatch" aria-pressed="true" style="--sw:#FFB87B"><i></i>3200K</button><button class="swatch" style="--sw:#FFEFE1"><i></i>5600K</button><button class="swatch" style="--sw:#E6EBFF"><i></i>7500K</button><button class="swatch" style="--sw:#FF4FA8"><i></i>Magenta</button>
+          </div>
+          <div class="slider" style="--to:90%"><div class="head"><span>Softness</span><span class="t-mono">90%</span></div><div class="rail" style="height:36px"><span class="fill"></span><span class="thumb"></span></div></div>
+          <div class="toggle-group"><button class="toggle" aria-pressed="true"><svg class="ico"><use href="#i-radial"/></svg>Gradient</button><button class="toggle" aria-pressed="false"><svg class="ico"><use href="#i-image"/></svg>Image</button><button class="toggle" aria-pressed="false"><svg class="ico"><use href="#i-edit"/></svg>Redraw</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="legend">
+  <b>Built only from <code>styles.css</code> components:</b> app bar, button, icon button, link, card, grid-2 (start) · canvas handles, drawer (bottom), slider, chip (blend), tabs, color swatch, toggle button, menu (editor). The only extra CSS is layout glue: the device frame, the drop zone border, and positioning.
+</div>
+</body>
+</html>

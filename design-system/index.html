@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lumière Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+/* page chrome (style-guide layout only; components/tokens live in styles.css) */
+body{font-family:var(--font-body);color:var(--text);background:var(--bg);display:flex;min-height:100vh}
+nav.side{position:sticky;top:0;align-self:flex-start;height:100vh;width:212px;flex:0 0 212px;background:var(--paper);box-shadow:inset -1px 0 0 var(--divider);padding:20px 12px;overflow:auto}
+nav.side .brand{padding:0 10px 4px}
+nav.side .brand small{display:block;font:500 11px var(--font-mono);color:var(--text-secondary);margin-top:2px}
+nav.side a{display:block;padding:6px 10px;border-radius:var(--r-sm);font-size:13px;color:var(--text-secondary);text-decoration:none}
+nav.side a:hover{background:var(--action-hover);color:var(--text)}
+nav.side a.concept-link{margin:14px 0 6px;padding:10px;font-weight:600;color:var(--on-primary);background:var(--primary);border-radius:var(--r-md);text-align:center}
+nav.side a.concept-link:hover{background:var(--primary-light);color:var(--on-primary)}
+nav.side .grp{font:600 10px var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--text-disabled);margin:16px 0 4px 10px}
+nav.side .ext{font:500 9px var(--font-mono);color:var(--secondary);margin-left:4px}
+main{flex:1;min-width:0;padding:36px 44px 120px;max-width:1080px}
+section{margin-bottom:56px;scroll-margin-top:20px}
+h2.sec{font:700 22px var(--font-display);letter-spacing:-.01em;color:var(--text);margin-bottom:6px;display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+h2.sec .cat{font:600 10px var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--primary);margin-right:4px}
+.sec-desc{color:var(--text-secondary);font-size:14px;margin-bottom:18px;max-width:700px;line-height:1.6}
+.sec-desc code,.hero code{font:12px var(--font-mono);background:var(--raised);padding:1px 5px;border-radius:var(--r-xs);color:var(--text)}
+.stage{background:var(--paper);box-shadow:inset 0 0 0 1px var(--divider);border-radius:var(--r-lg);padding:24px;display:flex;flex-wrap:wrap;gap:24px;align-items:center}
+.stage.col{flex-direction:column;align-items:stretch}
+.stage.dark{background:var(--bg)}
+.cell{display:flex;flex-direction:column;align-items:center;gap:8px}
+.cell.l{align-items:flex-start}
+.spec{font:11px var(--font-mono);color:var(--text-disabled)}
+.hero{margin-bottom:44px;padding:28px;border-radius:var(--r-lg);background:var(--safelight-glow),var(--paper);box-shadow:inset 0 0 0 1px var(--divider)}
+.hero .t-h1{font-size:40px}
+.hero p{color:var(--text-secondary);font-size:14px;line-height:1.65;margin-top:10px;max-width:640px}
+.pal-group{margin-bottom:18px}.pal-group h3{font:600 11px var(--font-body);letter-spacing:.1em;text-transform:uppercase;color:var(--text-secondary);margin-bottom:8px}
+.colors{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.sw{border-radius:var(--r-md);overflow:hidden;box-shadow:inset 0 0 0 1px var(--divider);background:var(--paper)}
+.sw .c{height:54px;display:flex;align-items:flex-end;padding:6px 8px;font:600 12px var(--font-body)}
+.sw .m{padding:7px 9px}.sw .n{font:600 12px var(--font-mono)}.sw .v{font:11px var(--font-mono);color:var(--text-disabled)}
+.sw .ratio{font:500 10px var(--font-mono);opacity:.9}
+.typerow{display:flex;align-items:baseline;gap:18px;padding:10px 0;box-shadow:inset 0 -1px 0 var(--divider)}
+.typerow .tk{width:150px;flex:0 0 150px;font:11px var(--font-mono);color:var(--text-disabled)}
+.sprow{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.sprow .bar{background:var(--primary);height:10px;border-radius:2px}.sprow .lbl{width:160px;font:12px var(--font-mono);color:var(--text-secondary)}
+.radii{display:flex;gap:16px;flex-wrap:wrap}.radii .r{width:72px;height:72px;background:var(--raised);box-shadow:inset 0 0 0 1px var(--outline);display:grid;place-items:end center;padding-bottom:6px;font:11px var(--font-mono);color:var(--text-secondary)}
+.elevs{display:flex;gap:20px;flex-wrap:wrap}.elevs .e{width:140px;height:84px;border-radius:var(--r-lg);background:var(--paper);display:grid;place-items:center;font:12px var(--font-mono);color:var(--text-secondary)}
+.motion{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.motion .m{background:var(--raised);border-radius:var(--r-md);padding:10px 12px;font:12px var(--font-mono);color:var(--text-secondary)}
+.motion .m b{color:var(--text);font-weight:500;display:block}
+.motion .track{height:4px;background:var(--overlay);border-radius:2px;margin-top:10px;position:relative;overflow:hidden}
+.motion .track i{position:absolute;left:0;top:0;width:24px;height:4px;background:var(--primary);border-radius:2px;animation:mv 1.6s infinite alternate}
+@keyframes mv{to{left:calc(100% - 24px)}}
+.iconGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.iconGrid .it{background:var(--paper);box-shadow:inset 0 0 0 1px var(--divider);border-radius:var(--r-md);padding:14px 6px 8px;display:flex;flex-direction:column;align-items:center;gap:7px;color:var(--text)}
+.iconGrid .it .nm{font:10.5px var(--font-mono);color:var(--text-disabled)}
+.table-docs{width:100%;border-collapse:collapse;font:12px var(--font-mono)}.table-docs td{padding:6px 8px;box-shadow:inset 0 -1px 0 var(--divider);color:var(--text-secondary)}.table-docs td:first-child{color:var(--text)}
+.mock-photo{border-radius:var(--r-lg);overflow:hidden;position:relative}
+
+/* top controls + Dev Mode + Inspector + Copy-as-prompt */
+#topctl{position:fixed;top:14px;right:18px;z-index:50;display:flex;gap:8px;align-items:center}
+#langSel{font:500 12px var(--font-body);border:0;box-shadow:inset 0 0 0 1px var(--outline);border-radius:var(--r-md);padding:8px 10px;background:var(--paper);color:var(--text-secondary)}
+.ds-btn{font:600 12px var(--font-body);background:var(--paper);border:1px solid var(--primary);color:var(--primary);border-radius:var(--r-md);padding:8px 12px;cursor:pointer}
+.ds-btn:hover{background:var(--primary-container)}
+#devToggle{font:600 12px var(--font-body);background:var(--paper);border:1px solid var(--outline);border-radius:var(--r-md);padding:8px 12px;cursor:pointer;color:var(--text-secondary)}
+#devToggle.on{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
+.sec-prompt{font:600 11px var(--font-body);border:1px solid var(--outline);background:transparent;color:var(--text-secondary);border-radius:var(--r-sm);padding:3px 9px;margin-left:8px;cursor:pointer}
+.sec-prompt:hover{border-color:var(--primary);color:var(--primary)}
+body.dev [data-insp]:hover{outline:2px dashed var(--secondary);outline-offset:3px;cursor:pointer}
+.insp-sel{outline:2px solid var(--primary)!important;outline-offset:3px}
+#inspector{position:fixed;top:0;right:0;width:340px;height:100vh;background:var(--paper);box-shadow:var(--elev-3);transform:translateX(100%);transition:transform var(--dur-standard) var(--ease);z-index:49;overflow:auto;padding:58px 20px 40px}
+body.inspecting #inspector{transform:translateX(0)}
+body.inspecting main{margin-right:340px}
+#inspector .iclose{position:absolute;top:12px;right:12px}
+#inspector .nm{font:700 20px var(--font-display);color:var(--text)}
+#inspector .file{font:12px var(--font-mono);color:var(--text-disabled);margin-top:2px}
+#inspector .desc{font-size:13px;color:var(--text-secondary);line-height:1.6;margin-top:10px}
+#inspector h4{font:600 10px var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--text-disabled);margin:20px 0 8px}
+.prop{padding:8px 0;box-shadow:inset 0 -1px 0 var(--divider)}.prop .pn{font:500 13px var(--font-mono)}.prop .pt{font:11px var(--font-mono);color:var(--secondary)}.prop .pdef{font:11px var(--font-mono);color:var(--text-disabled)}.prop .pd{font-size:12px;color:var(--text-secondary);margin-top:3px}
+.tok{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:var(--r-sm);cursor:pointer}.tok:hover{background:var(--action-hover)}
+.tok .tsw{width:22px;height:22px;border-radius:var(--r-sm);box-shadow:inset 0 0 0 1px var(--outline);flex:0 0 22px}.tok .tn{font:500 12px var(--font-mono)}.tok .tr{font-size:11px;color:var(--text-secondary)}.tok .tv{margin-left:auto;font:11px var(--font-mono);color:var(--text-disabled);max-width:110px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.metric{display:flex;justify-content:space-between;gap:12px;font:12px var(--font-mono);padding:5px 0;box-shadow:inset 0 -1px 0 var(--divider)}.metric .mk{color:var(--text-secondary)}
+.copyprompt{width:100%;margin-top:16px}
+.copied{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);opacity:0;transition:opacity var(--dur-shorter);z-index:60;pointer-events:none}.copied.show{opacity:1}
+@media (max-width:820px){nav.side{display:none}main{padding:72px 16px 100px}#topctl{left:16px;right:16px;flex-wrap:wrap}body.inspecting main{margin-right:0}#inspector{width:100%}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <!-- app chrome -->
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+  <symbol id="i-redo" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.75"/><path d="m21 16-5-5-9 9"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4"/><path d="m7 9 5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16v4M17 18h4"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10 12 4l8 6v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></symbol>
+  <!-- light, blur, mask -->
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-blur" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/></symbol>
+  <symbol id="i-mask" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-radial" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5" stroke-dasharray="2 2.4"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-linear" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18" /><path d="M3 15h18" stroke-dasharray="2 2.4"/></symbol>
+  <symbol id="i-brush" viewBox="0 0 24 24"><path d="M14 4l6 6-8.5 8.5a3 3 0 0 1-2 .9L5 20l.6-4.5a3 3 0 0 1 .9-2z"/><path d="M12 6l6 6"/></symbol>
+  <symbol id="i-object" viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><circle cx="12" cy="12" r="3.5"/></symbol>
+  <symbol id="i-flower" viewBox="0 0 24 24"><circle cx="12" cy="9" r="2"/><path d="M12 7c0-2.5 1.5-4 3-4 0 2-1 3.5-3 4zM12 7c0-2.5-1.5-4-3-4 0 2 1 3.5 3 4zM14 9c2.5 0 4 1.5 4 3-2 0-3.5-1-4-3zM10 9c-2.5 0-4 1.5-4 3 2 0 3.5-1 4-3z"/><path d="M12 11v10M12 17c-1.5-1.5-3.5-2-5-1.5M12 19c1.5-1.5 3.5-2 5-1.5"/></symbol>
+  <symbol id="i-invert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-solo" viewBox="0 0 24 24"><path d="M12 3v3"/><path d="M8 7h8l3 11H5z"/><path d="M9 21h6"/></symbol>
+  <!-- list + editing -->
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3 3.8M6.5 6.6A17 17 0 0 0 2 12s3.5 7 10 7a9.6 9.6 0 0 0 4.4-1"/></symbol>
+  <symbol id="i-grip" viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.4" fill="currentColor" stroke="none"/><circle cx="15" cy="6" r="1.4" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="9" cy="18" r="1.4" fill="currentColor" stroke="none"/><circle cx="15" cy="18" r="1.4" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-chevron-up" viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></symbol>
+  <symbol id="i-more-v" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.6" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-more-h" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13 7 4 4"/></symbol>
+  <!-- status -->
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></symbol>
+  <symbol id="i-warning" viewBox="0 0 24 24"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17v.5"/></symbol>
+  <symbol id="i-error" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></symbol>
+  <symbol id="i-success" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></symbol>
+</svg>
+
+<div id="topctl">
+  <button class="ds-btn" onclick="copyFullSystem()" title="Copy a prompt to install or update the whole design system">Install design system</button>
+  <select id="langSel" title="Copy-as-prompt target" aria-label="Target language for prompts"></select>
+  <button id="devToggle" onclick="toggleDev()">Dev Mode</button>
+</div>
+<aside id="inspector" aria-label="Component inspector"><button class="icon-btn iclose" onclick="closeInspector()" aria-label="Close inspector"><svg class="ico"><use href="#i-close"/></svg></button><div id="inspectorBody"></div></aside>
+<div class="copied snackbar" id="copied">Copied</div>
+
+<nav class="side" aria-label="Sections">
+  <div class="brand"><div class="wordmark">Lumi<i>è</i>re</div><small>Design system · Darkroom</small></div>
+  <a class="concept-link" href="concept.html">Concept preview →</a>
+  <div class="grp">Foundations</div>
+  <a href="#colors">Palette</a><a href="#type">Typography</a><a href="#spacing">Spacing</a><a href="#shape">Shape</a><a href="#elevation">Shadows</a><a href="#motion">Transitions</a><a href="#system">Breakpoints · z-index</a><a href="#icons">Icons</a>
+  <div class="grp">Inputs</div>
+  <a href="#button">Button</a><a href="#buttongroup">Button group</a><a href="#iconbutton">Icon button</a><a href="#fab">Floating action button</a><a href="#checkbox">Checkbox</a><a href="#radio">Radio group</a><a href="#switch">Switch</a><a href="#select">Select</a><a href="#autocomplete">Autocomplete</a><a href="#slider">Slider</a><a href="#textfield">Text field</a><a href="#togglebutton">Toggle button</a><a href="#rating">Rating</a>
+  <div class="grp">Data display</div>
+  <a href="#avatar">Avatar</a><a href="#badge">Badge</a><a href="#chip">Chip</a><a href="#divider">Divider</a><a href="#list">List</a><a href="#table">Table</a><a href="#tooltip">Tooltip</a><a href="#typography">Typography</a><a href="#icon">Icon</a>
+  <div class="grp">Feedback</div>
+  <a href="#alert">Alert</a><a href="#dialog">Dialog</a><a href="#snackbar">Snackbar</a><a href="#progress">Progress</a><a href="#skeleton">Skeleton</a><a href="#backdrop">Backdrop</a>
+  <div class="grp">Surfaces</div>
+  <a href="#appbar">App bar</a><a href="#card">Card</a><a href="#paper">Paper</a><a href="#accordion">Accordion</a>
+  <div class="grp">Navigation</div>
+  <a href="#bottomnav">Bottom navigation</a><a href="#drawer">Drawer</a><a href="#tabs">Tabs</a><a href="#menu">Menu</a><a href="#link">Link</a><a href="#stepper">Stepper</a><a href="#speeddial">Speed dial</a>
+  <div class="grp">Layout</div>
+  <a href="#layout">Box · Container · Grid · Stack</a>
+  <div class="grp">Extensions</div>
+  <a href="#swatch">Color swatch<span class="ext">ext</span></a><a href="#layerrow">Layer row<span class="ext">ext</span></a><a href="#handle">Canvas handle<span class="ext">ext</span></a>
+</nav>
+
+<main>
+  <header class="hero">
+    <div class="t-overline" style="color:var(--primary)">Lumière by Les Fleurs de la Nuit</div>
+    <div class="t-h1" style="margin-top:8px">Darkroom</div>
+    <p>The design system for a night-photography lighting editor. Graphite neutrals with a hair of warmth stay out of the photo's way; one safelight red-orange marks what is active. Compact density, every touch target at least 44&nbsp;px. Material token roles, MUI component catalogue. Source of truth: <code>styles.css</code>. Turn on <b>Dev Mode</b> to inspect a component; <b>Copy as prompt</b> implements it in any language.</p>
+  </header>
+
+  <!-- ═════════════ FOUNDATIONS ═════════════ -->
+  <section id="colors"><h2 class="sec">Palette</h2>
+    <p class="sec-desc">MUI palette roles, each <code>main / light / dark / contrastText</code>, plus a container pair for quiet emphasis. Neutrals are graphite at OKLCH chroma 0.004, hue 55: neutral enough to judge a photo against, warm enough not to feel clinical. Ratios below are WCAG contrast, computed from the hex values.</p>
+    <div id="palette"></div></section>
+  <section id="type"><h2 class="sec">Typography</h2><p class="sec-desc">Manrope for display (h1–h6), IBM Plex Sans for text, IBM Plex Mono for every number a photographer reads (percentages, sizes, Kelvin). ~1.2 modular scale for a compact UI; tracking tightens as size grows.</p><div id="typeList"></div></section>
+  <section id="spacing"><h2 class="sec">Spacing</h2><p class="sec-desc">One compact scale on a 4&nbsp;px unit (<code>spacing(n) = n × 4px</code>). Touch targets stay ≥ <code>--target</code> (44&nbsp;px) even where visuals are 32–40&nbsp;px: the hit area is padded, not the paint.</p><div id="spacingList"></div></section>
+  <section id="shape"><h2 class="sec">Shape</h2><p class="sec-desc">Tight, square-ish corners. Controls use <code>--r-md</code> (8); sheets and cards <code>--r-lg</code> (12); only dots, avatars and switches are round.</p><div class="radii" id="radii"></div></section>
+  <section id="elevation"><h2 class="sec">Shadows</h2><p class="sec-desc">Flat, with hairlines. Depth comes first from the surface ladder (<code>sunken → bg → paper → raised → overlay</code>), then from four shadow levels. MUI's 25 shadow steps map onto them: 0 → elev-0 · 1–2 → elev-1 · 3–8 → elev-2 · 9–24 → elev-3.</p><div class="elevs" id="elevs"></div></section>
+  <section id="motion"><h2 class="sec">Transitions</h2><p class="sec-desc">MUI durations and easings. Sheets and panels use <code>--ease</code> (fast out, soft landing, no overshoot). Everything collapses to instant when the device asks for reduced motion.</p><div class="motion" id="motionList"></div></section>
+  <section id="system"><h2 class="sec">Breakpoints · z-index</h2><p class="sec-desc">Phone-first. Breakpoints are documented values (CSS variables can't be used inside media queries); z-index follows MUI's stacking order.</p>
+    <div class="stage"><table class="table-docs" style="max-width:360px"><tbody id="bpRows"></tbody></table><table class="table-docs" style="max-width:360px"><tbody id="zRows"></tbody></table></div></section>
+  <section id="icons"><h2 class="sec">Icons</h2><p class="sec-desc">Inline SVG sprite in the Material-outlined style, themed by <code>--icon-size</code> (20) and <code>--icon-stroke</code> (1.75). Includes the app's own glyphs: light, blur, mask, radial and linear gradients, subject, object, brush, invert, solo. Never emoji.</p><div class="iconGrid" id="iconGrid"></div></section>
+
+  <!-- ═════════════ INPUTS ═════════════ -->
+  <section id="button"><h2 class="sec"><span class="cat">Inputs</span>Button</h2><p class="sec-desc">Variants <code>contained / outlined / text</code> (+ <code>tonal</code> for quiet actions), sizes <code>sm / md / lg</code>, colors via <code>.c-*</code>. Visual height 40; hit area 44.</p>
+    <div class="stage">
+      <div class="cell"><button class="btn btn-contained" data-insp="button"><svg class="ico"><use href="#i-plus"/></svg>New light</button><div class="spec">contained</div></div>
+      <div class="cell"><button class="btn btn-outlined" data-insp="button">Draw again</button><div class="spec">outlined</div></div>
+      <div class="cell"><button class="btn btn-text" data-insp="button">Cancel</button><div class="spec">text</div></div>
+      <div class="cell"><button class="btn btn-tonal" data-insp="button"><svg class="ico"><use href="#i-sparkle"/></svg>Presets</button><div class="spec">tonal</div></div>
+      <div class="cell"><button class="btn btn-contained is-pressed" data-insp="button">Export</button><div class="spec">pressed</div></div>
+      <div class="cell"><button class="btn btn-contained is-focused" data-insp="button">Export</button><div class="spec">focus</div></div>
+      <div class="cell"><button class="btn btn-contained" disabled data-insp="button">Export</button><div class="spec">disabled</div></div>
+      <div class="cell"><button class="btn btn-contained c-error" data-insp="button">Delete light</button><div class="spec">color error</div></div>
+      <div class="cell"><button class="btn btn-outlined c-secondary btn-sm" data-insp="button">Fine drag</button><div class="spec">sm · secondary</div></div>
+      <div class="cell"><button class="btn btn-contained btn-lg" data-insp="button"><svg class="ico"><use href="#i-download"/></svg>Export JPEG</button><div class="spec">lg</div></div>
+    </div></section>
+
+  <section id="buttongroup"><h2 class="sec"><span class="cat">Inputs</span>Button group</h2><p class="sec-desc">Related actions sharing one outline.</p>
+    <div class="stage"><div class="cell"><div class="btn-group" data-insp="buttongroup"><button class="btn btn-text c-neutral">JPEG</button><button class="btn btn-text c-neutral">PNG</button><button class="btn btn-text c-neutral">Project</button></div><div class="spec">text · neutral</div></div></div></section>
+
+  <section id="iconbutton"><h2 class="sec"><span class="cat">Inputs</span>Icon button</h2><p class="sec-desc">Always a 44&nbsp;px target. <code>standard / filled / tonal / outlined</code>; toggles carry <code>aria-pressed</code>.</p>
+    <div class="stage">
+      <div class="cell"><button class="icon-btn" data-insp="iconbutton" aria-label="Undo"><svg class="ico"><use href="#i-undo"/></svg></button><div class="spec">standard</div></div>
+      <div class="cell"><button class="icon-btn icon-btn--filled" data-insp="iconbutton" aria-label="Add"><svg class="ico"><use href="#i-plus"/></svg></button><div class="spec">filled</div></div>
+      <div class="cell"><button class="icon-btn icon-btn--tonal" data-insp="iconbutton" aria-label="More"><svg class="ico"><use href="#i-more-v"/></svg></button><div class="spec">tonal</div></div>
+      <div class="cell"><button class="icon-btn icon-btn--outlined" data-insp="iconbutton" aria-label="Duplicate"><svg class="ico"><use href="#i-copy"/></svg></button><div class="spec">outlined</div></div>
+      <div class="cell"><button class="icon-btn" aria-pressed="true" data-insp="iconbutton" aria-label="Show this light alone"><svg class="ico"><use href="#i-solo"/></svg></button><div class="spec">toggle · on</div></div>
+      <div class="cell"><button class="icon-btn" aria-pressed="false" data-insp="iconbutton" aria-label="Visible"><svg class="ico"><use href="#i-eye"/></svg></button><div class="spec">toggle · off</div></div>
+      <div class="cell"><button class="icon-btn" disabled data-insp="iconbutton" aria-label="Redo"><svg class="ico"><use href="#i-redo"/></svg></button><div class="spec">disabled</div></div>
+    </div></section>
+
+  <section id="fab"><h2 class="sec"><span class="cat">Inputs</span>Floating action button</h2><p class="sec-desc">The one primary action floating over the photo. <code>regular / small / extended</code>.</p>
+    <div class="stage">
+      <div class="cell"><button class="fab" data-insp="fab" aria-label="New light"><svg class="ico"><use href="#i-plus"/></svg></button><div class="spec">regular</div></div>
+      <div class="cell"><button class="fab fab-sm" data-insp="fab" aria-label="New light"><svg class="ico"><use href="#i-plus"/></svg></button><div class="spec">small</div></div>
+      <div class="cell"><button class="fab fab-extended" data-insp="fab"><svg class="ico"><use href="#i-sun"/></svg>New light</button><div class="spec">extended</div></div>
+      <div class="cell"><button class="fab fab-extended fab-secondary" data-insp="fab"><svg class="ico"><use href="#i-sparkle"/></svg>Presets</button><div class="spec">extended · secondary</div></div>
+    </div></section>
+
+  <section id="checkbox"><h2 class="sec"><span class="cat">Inputs</span>Checkbox</h2><p class="sec-desc">Unchecked, checked, indeterminate, disabled. Row is 44&nbsp;px tall.</p>
+    <div class="stage">
+      <span class="check" role="checkbox" aria-checked="false" data-insp="checkbox"><span class="box"><svg class="ico i-check"><use href="#i-check"/></svg></span>Include masks</span>
+      <span class="check" role="checkbox" aria-checked="true" data-insp="checkbox"><span class="box"><svg class="ico i-check"><use href="#i-check"/></svg></span>Embed photo</span>
+      <span class="check" role="checkbox" aria-checked="mixed" data-insp="checkbox"><span class="box"><svg class="ico i-minus"><use href="#i-minus"/></svg></span>All lights</span>
+      <span class="check is-disabled" role="checkbox" aria-checked="true" aria-disabled="true" data-insp="checkbox"><span class="box"><svg class="ico i-check"><use href="#i-check"/></svg></span>16-bit (unsupported)</span>
+    </div></section>
+
+  <section id="radio"><h2 class="sec"><span class="cat">Inputs</span>Radio group</h2><p class="sec-desc">One choice from a short list.</p>
+    <div class="stage"><div class="radio-group" role="radiogroup" data-insp="radio">
+      <span class="radio" role="radio" aria-checked="false"><span class="dot"></span>Zoom</span>
+      <span class="radio" role="radio" aria-checked="true"><span class="dot"></span>Spin</span>
+      <span class="radio is-disabled" role="radio" aria-checked="false" aria-disabled="true"><span class="dot"></span>Path (coming)</span></div></div></section>
+
+  <section id="switch"><h2 class="sec"><span class="cat">Inputs</span>Switch</h2><p class="sec-desc">Instant on/off settings. Use for toggles; never for actions.</p>
+    <div class="stage">
+      <span class="switch" role="switch" aria-checked="true" data-insp="switch"><span class="track"></span>Show mask</span>
+      <span class="switch" role="switch" aria-checked="false" data-insp="switch"><span class="track"></span>Invert mask</span>
+      <span class="switch is-disabled" role="switch" aria-checked="false" aria-disabled="true" data-insp="switch"><span class="track"></span>Fine drag</span>
+    </div></section>
+
+  <section id="select"><h2 class="sec"><span class="cat">Inputs</span>Select</h2><p class="sec-desc">Closed field and open listbox. Blend mode lives here in the redesigned editor.</p>
+    <div class="stage" style="align-items:flex-start">
+      <div class="field field-outlined select" style="width:200px" data-insp="select"><span class="lbl">Blend mode</span><div class="ctl"><span>Screen</span><svg class="ico"><use href="#i-chevron-down"/></svg></div></div>
+      <div class="listbox" role="listbox" data-insp="select"><div class="opt" role="option" aria-selected="true">Screen<span class="t-mono">default</span></div><div class="opt" role="option">Overlay</div><div class="opt" role="option">Lighten</div><div class="opt" role="option">Color Dodge</div></div>
+    </div></section>
+
+  <section id="autocomplete"><h2 class="sec"><span class="cat">Inputs</span>Autocomplete</h2><p class="sec-desc">Type to filter a long list (light images, presets).</p>
+    <div class="stage"><div class="autocomplete" data-insp="autocomplete">
+      <div class="field field-outlined is-focused"><span class="lbl">Light image</span><div class="ctl"><svg class="ico"><use href="#i-search"/></svg><span>win</span></div></div>
+      <div class="listbox"><div class="opt" aria-selected="true"><mark>Win</mark>dow · four panes</div><div class="opt"><mark>Win</mark>dow · blinds</div><div class="opt">Sho<mark>win</mark>g light · stage</div></div></div></div></section>
+
+  <section id="slider"><h2 class="sec"><span class="cat">Inputs</span>Slider</h2><p class="sec-desc">Continuous, discrete (marks), range, disabled. The value sits in the header in mono; a bubble shows while dragging. Rail is a 44&nbsp;px target.</p>
+    <div class="stage col">
+      <div class="slider" style="--to:85%" data-insp="slider"><div class="head"><span>Opacity</span><span class="t-mono">85%</span></div><div class="rail"><span class="fill"></span><span class="thumb"></span></div></div>
+      <div class="slider" style="--to:42%" data-insp="slider"><div class="head"><span>Strength</span><span class="t-mono">42%</span></div><div class="rail"><span class="fill"></span><span class="thumb is-active"></span><span class="bubble">42%</span></div></div>
+      <div class="slider" style="--to:50%" data-insp="slider"><div class="head"><span>Samples</span><span class="t-mono">64</span></div><div class="rail"><span class="marks"><i></i><i></i><i></i><i></i><i></i></span><span class="fill"></span><span class="thumb"></span></div></div>
+      <div class="slider" style="--from:20%;--to:70%" data-insp="slider"><div class="head"><span>Feather range</span><span class="t-mono">20–70%</span></div><div class="rail"><span class="fill"></span><span class="thumb from"></span><span class="thumb"></span></div></div>
+      <div class="slider is-disabled" style="--to:30%" data-insp="slider"><div class="head"><span style="color:var(--text-disabled)">Density</span><span class="t-mono">30%</span></div><div class="rail"><span class="fill"></span><span class="thumb" style="background:var(--text-disabled)"></span></div></div>
+    </div></section>
+
+  <section id="textfield"><h2 class="sec"><span class="cat">Inputs</span>Text field</h2><p class="sec-desc"><code>filled / outlined / standard</code> × empty, focused, filled, error, disabled; with label, helper and leading/trailing icons.</p>
+    <div class="stage" style="align-items:flex-start">
+      <div class="field field-filled" style="width:200px" data-insp="textfield"><span class="lbl">Light name</span><div class="ctl"><span class="ph">Halo · 3200K</span></div><span class="help">Shown in the lights list</span></div>
+      <div class="field field-outlined is-focused" style="width:200px" data-insp="textfield"><span class="lbl">Light name</span><div class="ctl"><span>Back light</span></div><span class="help">Focused</span></div>
+      <div class="field field-standard" style="width:200px" data-insp="textfield"><span class="lbl">Export width</span><div class="ctl"><span>4000</span><span class="t-mono" style="margin-left:auto">px</span></div></div>
+      <div class="field field-outlined is-error" style="width:200px" data-insp="textfield"><span class="lbl">Export width</span><div class="ctl"><span>24000</span><svg class="ico" style="color:var(--error);margin-left:auto"><use href="#i-error"/></svg></div><span class="help">Max 16,384 px on this device</span></div>
+      <div class="field field-outlined is-disabled" style="width:200px" data-insp="textfield"><span class="lbl" style="color:var(--text-disabled)">Project file</span><div class="ctl"><span>dahlia.lumiere.json</span></div></div>
+    </div></section>
+
+  <section id="togglebutton"><h2 class="sec"><span class="cat">Inputs</span>Toggle button</h2><p class="sec-desc">Segmented single-select (light type, blur method) or multi-select. Each segment is ≥ 40&nbsp;px tall inside a 44&nbsp;px track.</p>
+    <div class="stage col" style="max-width:420px">
+      <div class="toggle-group" data-insp="togglebutton"><button class="toggle" aria-pressed="true"><svg class="ico"><use href="#i-radial"/></svg>Gradient</button><button class="toggle" aria-pressed="false"><svg class="ico"><use href="#i-image"/></svg>Image</button></div>
+      <div class="toggle-group" data-insp="togglebutton"><button class="toggle" aria-pressed="false">Zoom</button><button class="toggle" aria-pressed="true">Spin</button></div>
+      <div class="toggle-group" data-insp="togglebutton"><button class="toggle" aria-pressed="true" aria-label="Brush"><svg class="ico"><use href="#i-brush"/></svg></button><button class="toggle" aria-pressed="true" aria-label="Object"><svg class="ico"><use href="#i-object"/></svg></button><button class="toggle" aria-pressed="false" aria-label="Subject"><svg class="ico"><use href="#i-flower"/></svg></button></div>
+    </div></section>
+
+  <section id="rating"><h2 class="sec"><span class="cat">Inputs</span>Rating</h2><p class="sec-desc">For favouriting presets and recipes.</p>
+    <div class="stage"><div class="rating" data-insp="rating" role="img" aria-label="4 of 5"><svg class="ico ico--filled"><use href="#i-star"/></svg><svg class="ico ico--filled"><use href="#i-star"/></svg><svg class="ico ico--filled"><use href="#i-star"/></svg><svg class="ico ico--filled"><use href="#i-star"/></svg><svg class="ico off"><use href="#i-star"/></svg></div><span class="t-mono">4.0</span></div></section>
+
+  <!-- ═════════════ DATA DISPLAY ═════════════ -->
+  <section id="avatar"><h2 class="sec"><span class="cat">Data display</span>Avatar</h2><p class="sec-desc">Initials, image, square (for photos), sizes, group.</p>
+    <div class="stage">
+      <div class="cell"><span class="avatar" data-insp="avatar">LF</span><div class="spec">initials</div></div>
+      <div class="cell"><span class="avatar photo" data-insp="avatar" role="img" aria-label="Photo"></span><div class="spec">image</div></div>
+      <div class="cell"><span class="avatar avatar-lg avatar-square photo" data-insp="avatar" role="img" aria-label="Photo"></span><div class="spec">square · lg</div></div>
+      <div class="cell"><span class="avatar avatar-sm" data-insp="avatar">N</span><div class="spec">sm</div></div>
+      <div class="cell"><span class="avatar-group" data-insp="avatar"><span class="avatar">LF</span><span class="avatar photo"></span><span class="avatar">+3</span></span><div class="spec">group</div></div>
+    </div></section>
+
+  <section id="badge"><h2 class="sec"><span class="cat">Data display</span>Badge</h2><p class="sec-desc">Dot and number on an icon.</p>
+    <div class="stage">
+      <div class="cell"><span class="badge-wrap" data-insp="badge"><button class="icon-btn" aria-label="Lights, 3"><svg class="ico"><use href="#i-layers"/></svg></button><span class="badge">3</span></span><div class="spec">number</div></div>
+      <div class="cell"><span class="badge-wrap" data-insp="badge"><button class="icon-btn" aria-label="Presets, new"><svg class="ico"><use href="#i-sparkle"/></svg></button><span class="badge dot"></span></span><div class="spec">dot</div></div>
+    </div></section>
+
+  <section id="chip"><h2 class="sec"><span class="cat">Data display</span>Chip</h2><p class="sec-desc">Compact attributes and filters: filled / outlined, selected, with icon, deletable, disabled. 32&nbsp;px visual, 44&nbsp;px hit area.</p>
+    <div class="stage">
+      <span class="chip" data-insp="chip"><svg class="ico"><use href="#i-blur"/></svg>Radial · 42%</span>
+      <span class="chip chip-outlined" data-insp="chip">Gaussian · 2.0%</span>
+      <span class="chip" aria-pressed="true" data-insp="chip"><svg class="ico"><use href="#i-check"/></svg>Screen</span>
+      <span class="chip" data-insp="chip"><svg class="ico"><use href="#i-flower"/></svg>Subject<svg class="ico del"><use href="#i-close"/></svg></span>
+      <span class="chip is-disabled" data-insp="chip">Linear</span>
+    </div></section>
+
+  <section id="divider"><h2 class="sec"><span class="cat">Data display</span>Divider</h2><p class="sec-desc">Full, inset, vertical. Decorative (exempt from 3:1).</p>
+    <div class="stage col" data-insp="divider"><hr class="divider"><hr class="divider divider-inset"><div class="row" style="height:28px"><span class="t-body2">Opacity</span><span class="divider divider-v"></span><span class="t-body2">Blend</span></div></div></section>
+
+  <section id="list"><h2 class="sec"><span class="cat">Data display</span>List</h2><p class="sec-desc">One- and two-line items with leading and trailing slots, subheader, selected and clickable states. Rows are 52&nbsp;px.</p>
+    <div class="stage"><div class="list" style="width:340px" data-insp="list">
+      <div class="list-subheader">Export</div>
+      <div class="list-item clickable"><svg class="ico"><use href="#i-image"/></svg><div class="txt"><div class="pri">Photograph</div><div class="sec">4000 × 5000 · JPEG</div></div><svg class="ico" style="color:var(--text-secondary)"><use href="#i-chevron-right"/></svg></div>
+      <div class="list-item clickable selected"><svg class="ico"><use href="#i-folder"/></svg><div class="txt"><div class="pri">Editable project</div><div class="sec">Photo, lights, blurs and masks</div></div><svg class="ico" style="color:var(--primary)"><use href="#i-check"/></svg></div>
+      <div class="list-item"><div class="txt"><div class="pri">Embed light images</div></div><span class="switch" role="switch" aria-checked="true"><span class="track"></span></span></div>
+    </div></div></section>
+
+  <section id="table"><h2 class="sec"><span class="cat">Data display</span>Table</h2><p class="sec-desc">Compact data with numbers in mono, right-aligned.</p>
+    <div class="stage"><table class="table" style="max-width:420px" data-insp="table"><thead><tr><th>Size</th><th style="text-align:right">Pixels</th><th style="text-align:right">MB</th></tr></thead>
+      <tbody><tr><td>Preview</td><td class="num">1280 × 1600</td><td class="num">2.0</td></tr><tr class="selected"><td>Full</td><td class="num">4000 × 5000</td><td class="num">8.6</td></tr><tr><td>Web</td><td class="num">1600 × 2000</td><td class="num">1.1</td></tr></tbody></table></div></section>
+
+  <section id="tooltip"><h2 class="sec"><span class="cat">Data display</span>Tooltip</h2><p class="sec-desc">Plain (inverted) and rich. Long-press on touch.</p>
+    <div class="stage"><span class="tooltip" data-insp="tooltip">Show this light alone</span><span class="tooltip tooltip-rich" data-insp="tooltip"><b>Density</b>How strongly the mask holds light back. 100% blocks fully; 50% lets half through.</span></div></section>
+
+  <section id="typography"><h2 class="sec"><span class="cat">Data display</span>Typography</h2><p class="sec-desc">The <code>Typography</code> component: one class per variant (see the Typography foundation for the full scale).</p>
+    <div class="stage col" data-insp="typography"><div class="t-h4">Halo · 3200K</div><div class="t-subtitle2">Radial gradient · Screen · 85%</div><div class="t-body2">Blurs run top to bottom, each on the result of the one before.</div><div class="t-overline">Color temperature</div><div class="t-mono">x 1.12 · y −0.14</div></div></section>
+
+  <section id="icon"><h2 class="sec"><span class="cat">Data display</span>Icon</h2><p class="sec-desc">Sizes <code>sm 16 / md 20 / lg 24 / xl 32</code>, outlined and filled, colored by <code>currentColor</code>.</p>
+    <div class="stage" data-insp="icon"><svg class="ico ico--sm"><use href="#i-sun"/></svg><svg class="ico"><use href="#i-sun"/></svg><svg class="ico ico--lg"><use href="#i-sun"/></svg><svg class="ico ico--xl" style="color:var(--primary)"><use href="#i-sun"/></svg><svg class="ico ico--lg ico--filled" style="color:var(--warning)"><use href="#i-star"/></svg></div></section>
+
+  <!-- ═════════════ FEEDBACK ═════════════ -->
+  <section id="alert"><h2 class="sec"><span class="cat">Feedback</span>Alert</h2><p class="sec-desc">Severity <code>error / warning / info / success</code> × variant <code>standard / filled / outlined</code>. Always an icon plus words, never color alone (error and the safelight primary are both warm).</p>
+    <div class="stage col">
+      <div class="alert sev-info" data-insp="alert"><svg class="ico"><use href="#i-info"/></svg><div><b>Selection runs on this device</b>The first Select Subject downloads a 4 MB model.</div></div>
+      <div class="alert sev-success" data-insp="alert"><svg class="ico"><use href="#i-success"/></svg><div>Subject selected in 0.8 s.</div></div>
+      <div class="alert sev-warning alert-outlined" data-insp="alert"><svg class="ico"><use href="#i-warning"/></svg><div>Export reduced to 16.7 MP: this browser's limit.</div></div>
+      <div class="alert sev-error alert-filled" data-insp="alert"><svg class="ico"><use href="#i-error"/></svg><div>That file could not be read as an image.</div></div>
+    </div></section>
+
+  <section id="dialog"><h2 class="sec"><span class="cat">Feedback</span>Dialog</h2><p class="sec-desc">Rare; prefer undo. Shown over a scrim.</p>
+    <div class="stage dark"><div class="dialog" data-insp="dialog" role="dialog" aria-label="Replace photo"><div class="t-h5">Replace the photo?</div><div class="t-body2">Your lights carry over. Their masks belong to the old photo and will be cleared.</div><div class="actions"><button class="btn btn-text c-neutral">Cancel</button><button class="btn btn-contained">Replace</button></div></div></div></section>
+
+  <section id="snackbar"><h2 class="sec"><span class="cat">Feedback</span>Snackbar</h2><p class="sec-desc">Brief confirmation at the top of the photo, with an optional action. Inverted for contrast over any image.</p>
+    <div class="stage dark"><div class="snackbar" data-insp="snackbar">Deleted Halo · 3200K<button class="btn btn-text">Undo</button></div><div class="snackbar" data-insp="snackbar">Saved dahlia-lit.jpg</div></div></section>
+
+  <section id="progress"><h2 class="sec"><span class="cat">Feedback</span>Progress</h2><p class="sec-desc">Linear and circular, determinate and indeterminate.</p>
+    <div class="stage">
+      <div class="cell"><div class="progress" style="--value:62%" data-insp="progress"><span class="bar"></span></div><div class="spec">linear · 62%</div></div>
+      <div class="cell"><div class="progress indeterminate" data-insp="progress"><span class="bar"></span></div><div class="spec">linear · indeterminate</div></div>
+      <div class="cell"><div class="spinner determinate" style="--value:65%" data-insp="progress"></div><div class="spec">circular · 65%</div></div>
+      <div class="cell"><div class="spinner" data-insp="progress"></div><div class="spec">circular · indeterminate</div></div>
+    </div></section>
+
+  <section id="skeleton"><h2 class="sec"><span class="cat">Feedback</span>Skeleton</h2><p class="sec-desc">Placeholders while thumbnails and previews render.</p>
+    <div class="stage"><div class="layer-row" style="width:340px" data-insp="skeleton"><span></span><span class="skeleton rect" style="width:48px;height:48px"></span><div class="stack" style="--gap:6px"><span class="skeleton text" style="width:70%"></span><span class="skeleton text" style="width:45%;height:10px"></span></div><span class="skeleton circle" style="width:20px;height:20px"></span></div></div></section>
+
+  <section id="backdrop"><h2 class="sec"><span class="cat">Feedback</span>Backdrop</h2><p class="sec-desc">Scrim over the photo during a blocking task (full-resolution export).</p>
+    <div class="stage" style="padding:0;overflow:hidden"><div class="mock-photo photo" style="width:100%;height:200px;position:relative"><div class="backdrop" data-insp="backdrop" style="position:absolute;inset:0;border-radius:0;align-content:center"><div class="spinner"></div>Rendering at full resolution…</div></div></div></section>
+
+  <!-- ═════════════ SURFACES ═════════════ -->
+  <section id="appbar"><h2 class="sec"><span class="cat">Surfaces</span>App bar</h2><p class="sec-desc">Top bar. Over the photo it's transparent with a fade; elsewhere it's paper.</p>
+    <div class="stage col" style="padding:0;overflow:hidden">
+      <div class="appbar" data-insp="appbar"><div class="wordmark grow">Lumi<i>è</i>re</div><button class="icon-btn" aria-label="Undo"><svg class="ico"><use href="#i-undo"/></svg></button><button class="icon-btn" disabled aria-label="Redo"><svg class="ico"><use href="#i-redo"/></svg></button><button class="icon-btn" aria-label="Open"><svg class="ico"><use href="#i-image"/></svg></button><button class="btn btn-contained btn-sm" style="margin:0 8px 0 4px">Export</button></div>
+      <div class="photo" style="height:110px;position:relative"><div class="appbar transparent" data-insp="appbar"><button class="icon-btn" aria-label="Back"><svg class="ico"><use href="#i-chevron-left"/></svg></button><div class="ttl">dahlia-night.jpg<small>4000 × 5000</small></div><button class="icon-btn" aria-label="More"><svg class="ico"><use href="#i-more-v"/></svg></button></div></div>
+    </div></section>
+
+  <section id="card"><h2 class="sec"><span class="cat">Surfaces</span>Card</h2><p class="sec-desc">Elevated / outlined, clickable, selected. Used for presets and light images.</p>
+    <div class="stage">
+      <div class="card clickable" style="width:160px" data-insp="card"><div class="media" style="background:radial-gradient(circle at 50% 46%, #ffb87b 0 18%, rgb(176 102 51 / .5) 38%, var(--sunken) 70%)"></div><div class="content"><div class="t-subtitle2">Halo</div><div class="t-caption">Warm glow behind the subject</div></div></div>
+      <div class="card card-outlined selected" style="width:160px" data-insp="card"><div class="media" style="background:linear-gradient(150deg,#fff3df 0 10%,rgb(246 220 180 / .3) 30%,var(--sunken) 65%)"></div><div class="content"><div class="t-subtitle2">Window beams</div><div class="t-caption">Daylight from above</div></div><div class="actions"><button class="btn btn-text btn-sm">Preview</button><button class="btn btn-contained btn-sm">Apply</button></div></div>
+    </div></section>
+
+  <section id="paper"><h2 class="sec"><span class="cat">Surfaces</span>Paper</h2><p class="sec-desc">The surface ladder with its shadow levels.</p>
+    <div class="stage dark"><div class="paper elev-0" data-insp="paper"><span class="t-mono">elev-0 · paper</span></div><div class="paper elev-1" data-insp="paper"><span class="t-mono">elev-1 · paper</span></div><div class="paper elev-2" data-insp="paper"><span class="t-mono">elev-2 · raised</span></div><div class="paper elev-3" data-insp="paper"><span class="t-mono">elev-3 · overlay</span></div></div></section>
+
+  <section id="accordion"><h2 class="sec"><span class="cat">Surfaces</span>Accordion</h2><p class="sec-desc">One panel per blur or mask part: summary row (name · value · visibility · expand), details below.</p>
+    <div class="stage col" style="max-width:420px">
+      <div class="accordion" aria-expanded="true" data-insp="accordion"><div class="sum"><span class="t-mono">1</span><span class="t">Radial · Zoom</span><span class="t-mono">42%</span><button class="icon-btn" aria-label="Hide blur"><svg class="ico"><use href="#i-eye"/></svg></button><svg class="ico chev"><use href="#i-chevron-down"/></svg></div>
+        <div class="det"><div class="toggle-group"><button class="toggle" aria-pressed="true">Zoom</button><button class="toggle" aria-pressed="false">Spin</button></div><div class="slider" style="--to:42%"><div class="head"><span>Strength</span><span class="t-mono">42%</span></div><div class="rail"><span class="fill"></span><span class="thumb"></span></div></div><div class="t-mono">center x 1.12 · y −0.14 · outside the photo</div></div></div>
+      <div class="accordion" aria-expanded="false" data-insp="accordion"><div class="sum"><span class="t-mono">2</span><span class="t">Gaussian</span><span class="t-mono">2.0%</span><button class="icon-btn" aria-label="Hide blur"><svg class="ico"><use href="#i-eye"/></svg></button><svg class="ico chev"><use href="#i-chevron-down"/></svg></div></div>
+    </div></section>
+
+  <!-- ═════════════ NAVIGATION ═════════════ -->
+  <section id="bottomnav"><h2 class="sec"><span class="cat">Navigation</span>Bottom navigation</h2><p class="sec-desc">Not used in the editor today (one-screen app); reserved for a future library / recipes / account split.</p>
+    <div class="stage" style="padding:0;overflow:hidden"><div class="bottomnav" style="width:100%" data-insp="bottomnav"><div class="ni" aria-selected="true"><svg class="ico"><use href="#i-image"/></svg>Edit</div><div class="ni"><svg class="ico"><use href="#i-sparkle"/></svg>Recipes</div><div class="ni"><svg class="ico"><use href="#i-folder"/></svg>Projects</div><div class="ni"><svg class="ico"><use href="#i-user"/></svg>Account</div></div></div></section>
+
+  <section id="drawer"><h2 class="sec"><span class="cat">Navigation</span>Drawer</h2><p class="sec-desc">Anchored bottom, it's the sheet that holds the lights list and the editor (grabber, two heights). Anchored left, a modal menu.</p>
+    <div class="stage dark" style="align-items:flex-end">
+      <div class="drawer drawer-bottom" style="width:340px;padding:0 12px 12px" data-insp="drawer"><div class="grabber"></div><div class="row between" style="min-height:44px"><span class="t-h5">Lights</span><button class="btn btn-contained btn-sm"><svg class="ico"><use href="#i-plus"/></svg>New</button></div><div class="t-body2">3 lights · drag a handle to reorder</div></div>
+      <div class="drawer drawer-left" style="height:220px" data-insp="drawer"><div class="list-subheader">Lumière</div><div class="list-item clickable selected"><svg class="ico"><use href="#i-image"/></svg><div class="txt"><div class="pri">Edit</div></div></div><div class="list-item clickable"><svg class="ico"><use href="#i-folder"/></svg><div class="txt"><div class="pri">Projects</div></div></div></div>
+    </div></section>
+
+  <section id="tabs"><h2 class="sec"><span class="cat">Navigation</span>Tabs</h2><p class="sec-desc">Fixed tabs with counts and a sliding indicator: Light · Blurs · Mask.</p>
+    <div class="stage col" style="max-width:420px"><div class="tabs" role="tablist" style="--x:100%" data-insp="tabs"><button class="tab" role="tab" aria-selected="false"><svg class="ico ico--sm"><use href="#i-sun"/></svg>Light</button><button class="tab" role="tab" aria-selected="true"><svg class="ico ico--sm"><use href="#i-blur"/></svg>Blurs <span class="t-mono">2</span></button><button class="tab" role="tab" aria-selected="false"><svg class="ico ico--sm"><use href="#i-mask"/></svg>Mask <span class="t-mono">1</span></button><span class="ind"></span></div></div></section>
+
+  <section id="menu"><h2 class="sec"><span class="cat">Navigation</span>Menu</h2><p class="sec-desc">The ⋯ menu that holds a light's secondary actions, so they stop taking space in every tab.</p>
+    <div class="stage"><div class="menu" role="menu" data-insp="menu"><div class="mi" role="menuitem"><svg class="ico"><use href="#i-edit"/></svg>Rename</div><div class="mi" role="menuitem"><svg class="ico"><use href="#i-copy"/></svg>Duplicate</div><div class="mi" role="menuitem"><svg class="ico"><use href="#i-sparkle"/></svg>Save as recipe</div><div class="sep"></div><div class="mi danger" role="menuitem"><svg class="ico"><use href="#i-trash"/></svg>Delete light<span class="kbd">⌫</span></div></div></div></section>
+
+  <section id="link"><h2 class="sec"><span class="cat">Navigation</span>Link</h2><p class="sec-desc">Inline and quiet links.</p>
+    <div class="stage"><span class="t-body1">Read <a class="link" data-insp="link">how masks combine</a>.</span><a class="link link-quiet" data-insp="link">Or try a sample photo</a></div></section>
+
+  <section id="stepper"><h2 class="sec"><span class="cat">Navigation</span>Stepper</h2><p class="sec-desc">Horizontal steps for the first-run tutorial, and compact dots.</p>
+    <div class="stage col"><div class="stepper" data-insp="stepper"><div class="step done"><span class="n">1</span>Light</div><span class="line"></span><div class="step active"><span class="n">2</span>Blur</div><span class="line"></span><div class="step"><span class="n">3</span>Mask</div></div><div class="dots" data-insp="stepper"><i></i><i class="on"></i><i></i><i></i></div></div></section>
+
+  <section id="speeddial"><h2 class="sec"><span class="cat">Navigation</span>Speed dial</h2><p class="sec-desc">The New light FAB fanned open: one tap reveals the light types.</p>
+    <div class="stage dark" style="justify-content:flex-end"><div class="speeddial" data-insp="speeddial"><div class="act"><span class="lbl">Light image</span><button class="fab fab-sm fab-secondary" aria-label="Light image"><svg class="ico"><use href="#i-image"/></svg></button></div><div class="act"><span class="lbl">Radial gradient</span><button class="fab fab-sm fab-secondary" aria-label="Radial gradient"><svg class="ico"><use href="#i-radial"/></svg></button></div><div class="act"><span class="lbl">Preset</span><button class="fab fab-sm fab-secondary" aria-label="Preset"><svg class="ico"><use href="#i-sparkle"/></svg></button></div><button class="fab" aria-label="Close"><svg class="ico"><use href="#i-close"/></svg></button></div></div></section>
+
+  <!-- ═════════════ LAYOUT ═════════════ -->
+  <section id="layout"><h2 class="sec"><span class="cat">Layout</span>Box · Container · Grid · Stack</h2><p class="sec-desc">Utilities, not components: <code>.box</code> (padding), <code>.container</code> (600&nbsp;px, gutter), <code>.grid-2</code>, <code>.stack</code> (vertical gap), <code>.row</code> (horizontal). Gaps come from the spacing scale via <code>--gap</code>.</p>
+    <div class="stage col" data-insp="layout"><div class="grid-2"><div class="paper elev-1 box t-mono">grid-2 · 1</div><div class="paper elev-1 box t-mono">grid-2 · 2</div></div><div class="stack" style="--gap:var(--sp-8)"><div class="paper elev-1 t-mono" style="padding:8px">stack · 8</div><div class="paper elev-1 t-mono" style="padding:8px">stack · 8</div></div><div class="row"><span class="chip">row</span><span class="chip">gap 8</span><span class="grow"></span><span class="chip">end</span></div></div></section>
+
+  <!-- ═════════════ EXTENSIONS ═════════════ -->
+  <section id="swatch"><h2 class="sec"><span class="cat">Extension</span>Color swatch</h2><p class="sec-desc">Color temperature picker: black-body Kelvin presets plus two gels and a custom color, in one horizontally scrolling row. Labels in mono.</p>
+    <div class="stage"><div class="swatch-row" data-insp="swatch" style="max-width:100%">
+      <button class="swatch" style="--sw:#FF8400"><i></i>1900K</button><button class="swatch" style="--sw:#FFA757"><i></i>2700K</button><button class="swatch" aria-pressed="true" style="--sw:#FFB87B"><i></i>3200K</button><button class="swatch" style="--sw:#FFEFE1"><i></i>5600K</button><button class="swatch" style="--sw:#E6EBFF"><i></i>7500K</button><button class="swatch" style="--sw:#FF4FA8"><i></i>Magenta</button><button class="swatch" style="--sw:#4FD2FF"><i></i>Cyan</button><button class="swatch" style="--sw:conic-gradient(#f66,#fd6,#6f9,#6cf,#c6f,#f66)"><i></i>Custom</button></div></div></section>
+
+  <section id="layerrow"><h2 class="sec"><span class="cat">Extension</span>Layer row</h2><p class="sec-desc">One light in the list: drag handle · thumbnail of the light alone · name and summary · visibility. States: default, active (being edited), dragging, hidden.</p>
+    <div class="stage col" style="max-width:420px">
+      <div class="layer-row active" data-insp="layerrow"><span class="grip"><svg class="ico"><use href="#i-grip"/></svg></span><span class="thumb" style="--thumb:radial-gradient(circle at 40% 35%, #ffb87b 0 15%, rgb(176 102 51 / .5) 40%, #000 72%)"></span><div class="grow"><div class="pri">Halo · 3200K</div><div class="sec">Screen · 85% · 2 blurs · mask</div></div><button class="icon-btn" aria-label="Hide"><svg class="ico"><use href="#i-eye"/></svg></button></div>
+      <div class="layer-row dragging" data-insp="layerrow"><span class="grip"><svg class="ico"><use href="#i-grip"/></svg></span><span class="thumb" style="--thumb:linear-gradient(150deg,#fff3df 0 12%,rgb(246 220 180 / .3) 32%,#000 65%)"></span><div class="grow"><div class="pri">Window beams</div><div class="sec">Screen · 70% · 1 blur · mask</div></div><button class="icon-btn" aria-label="Hide"><svg class="ico"><use href="#i-eye"/></svg></button></div>
+      <div class="layer-row hidden-layer" data-insp="layerrow"><span class="grip"><svg class="ico"><use href="#i-grip"/></svg></span><span class="thumb" style="--thumb:radial-gradient(circle at 0% 50%, #ff9a3c 0 25%, #000 75%)"></span><div class="grow"><div class="pri">Side sun · 2700K</div><div class="sec">Screen · 75% · hidden</div></div><button class="icon-btn" aria-label="Show"><svg class="ico"><use href="#i-eye-off"/></svg></button></div>
+    </div></section>
+
+  <section id="handle"><h2 class="sec"><span class="cat">Extension</span>Canvas handle</h2><p class="sec-desc">Drawn over the photo: the light's center (crosshair), the ellipse's axis handles, and the blur center. A dark outer ring keeps them visible on bright light.</p>
+    <div class="stage" style="padding:0;overflow:hidden"><div class="photo" style="width:100%;height:180px;display:flex;align-items:center;justify-content:center;gap:48px"><span class="handle cross" data-insp="handle"></span><span class="handle axis" data-insp="handle"></span><span class="handle" style="border-color:var(--secondary)" data-insp="handle"></span></div></div></section>
+</main>
+
+<script>
+/* ===== Foundations data (values read live from styles.css; lists only name the tokens) ===== */
+const root=document.documentElement, css=n=>getComputedStyle(root).getPropertyValue(n).trim();
+const lum=h=>{h=h.replace('#','');if(h.length!==6)return null;const c=[0,2,4].map(i=>parseInt(h.substr(i,2),16)/255).map(x=>x<=.03928?x/12.92:((x+.055)/1.055)**2.4);return .2126*c[0]+.7152*c[1]+.0722*c[2];};
+const ratio=(a,b)=>{const x=lum(a),y=lum(b);if(x==null||y==null)return'';const[h,l]=x>y?[x,y]:[y,x];return((h+.05)/(l+.05)).toFixed(1);};
+const PALETTE={
+ 'Neutrals · surface ladder':[['sunken','text'],['bg','text'],['paper','text'],['raised','text'],['overlay','text'],['divider'],['outline'],['outline-strong']],
+ 'Text':[['text','paper'],['text-secondary','paper'],['text-disabled','paper']],
+ 'Primary · safelight':[['primary','on-primary'],['primary-light','on-primary'],['primary-dark'],['primary-container','on-primary-container']],
+ 'Secondary · cool steel':[['secondary','on-secondary'],['secondary-light','on-secondary'],['secondary-dark'],['secondary-container','on-secondary-container']],
+ 'Status':[['error','on-error'],['error-container','on-error-container'],['warning','on-warning'],['warning-container','on-warning-container'],['success','on-success'],['success-container','on-success-container'],['info','on-info'],['info-container','on-info-container']]};
+palette.innerHTML=Object.entries(PALETTE).map(([g,rows])=>`<div class="pal-group"><h3>${g}</h3><div class="colors">${rows.map(([n,on])=>{const v=css('--'+n),fg=on?css('--'+on):'',isText=n.startsWith('text');
+  const label=on?(isText?`<span style="color:${v}">Aa</span>`:`<span style="color:${fg}">Aa</span>`):'';const bg=isText?fg:v;const r=on?(isText?ratio(v,fg):ratio(v,fg)):ratio(v,css('--paper'));
+  return `<div class="sw"><div class="c" style="background:${bg}">${label}</div><div class="m"><div class="n">--${n}</div><div class="v">${v}${r?` · <span class="ratio">${r}:1${on?' with '+(isText?'paper':'--'+on):' on paper'}</span>`:''}</div></div></div>`;}).join('')}</div></div>`).join('');
+const TYPE=[['t-h1','Manrope 700 / 34 · −2.5%'],['t-h2','Manrope 700 / 28 · −2%'],['t-h3','Manrope 700 / 24'],['t-h4','Manrope 700 / 20'],['t-h5','Manrope 700 / 17'],['t-h6','Manrope 600 / 15'],['t-subtitle1','Plex Sans 600 / 15'],['t-subtitle2','Plex Sans 600 / 13'],['t-body1','Plex Sans 400 / 15 · 1.5'],['t-body2','Plex Sans 400 / 13 · 1.5'],['t-button','Plex Sans 600 / 14'],['t-caption','Plex Sans 400 / 12'],['t-overline','Plex Sans 600 / 11 · +10% caps'],['t-mono','Plex Mono 500 / 12 · tabular']];
+const SAMPLE={'t-mono':'85% · 3200K · 4000 × 5000','t-overline':'Color temperature','t-button':'Export'};
+typeList.innerHTML=TYPE.map(([n,m])=>`<div class="typerow"><div class="tk">${n}<br>${m}</div><div class="${n}">${SAMPLE[n]||'Light behind the dahlia'}</div></div>`).join('');
+const SPACING=['sp-2','sp-4','sp-8','sp-12','sp-16','sp-20','sp-24','sp-32','sp-48','sp-64','target','control-h','control-h-sm','row-h','appbar-h'];
+spacingList.innerHTML=SPACING.map(n=>{const v=parseFloat(css('--'+n));return `<div class="sprow"><div class="lbl">--${n} · ${v}px</div><div class="bar" style="width:${v*3}px;${n.startsWith('sp')?'':'background:var(--secondary)'}"></div></div>`;}).join('');
+radii.innerHTML=['r-none','r-xs','r-sm','r-md','r-lg','r-full'].map(n=>`<div class="r" style="border-radius:var(--${n})">${n}</div>`).join('');
+elevs.innerHTML=['elev-0','elev-1','elev-2','elev-3'].map(n=>`<div class="e" style="box-shadow:var(--${n})">${n}</div>`).join('');
+motionList.innerHTML=[['dur-shortest','ease-in-out'],['dur-shorter','ease-out'],['dur-short','ease'],['dur-standard','ease'],['dur-complex','ease-in-out'],['dur-enter','ease-out'],['dur-leave','ease-in']].map(([d,e])=>`<div class="m"><b>--${d} · ${css('--'+d)}</b>--${e}<div class="track"><i style="animation-duration:calc(${css('--'+d)} * 4);animation-timing-function:var(--${e})"></i></div></div>`).join('');
+bpRows.innerHTML=[['xs','0'],['sm','600px'],['md','900px'],['lg','1200px'],['xl','1536px']].map(([k,v])=>`<tr><td>breakpoint ${k}</td><td>${v}</td></tr>`).join('');
+zRows.innerHTML=['z-fab','z-appbar','z-drawer','z-modal','z-snackbar','z-tooltip'].map(n=>`<tr><td>--${n}</td><td>${css('--'+n)}</td></tr>`).join('');
+const ICONS=[...document.querySelectorAll('svg symbol')].map(s=>s.id.slice(2));
+iconGrid.innerHTML=ICONS.map(n=>`<div class="it"><svg class="ico ico--lg"><use href="#i-${n}"/></svg><div class="nm">i-${n}</div></div>`).join('');
+
+/* ===== SPECS: one entry per component (drives Inspector + Copy-as-prompt) =====
+   tokens list names only; values + swatches are read live from styles.css. */
+const t=(r,n)=>({r,n});
+const SPECS={
+ button:{name:'Button',file:'src/components/Button.tsx',desc:'Main action button. variant contained (primary action) / outlined (secondary) / text (tertiary, dialogs) / tonal (quiet utility); size sm/md/lg; color primary/secondary/error/success/neutral. States: enabled, hover (8% state layer), pressed (16%), focus (2px ring with 2px gap), disabled. Icon optional before the label.',
+  props:[{n:'children',t:'ReactNode'},{n:'variant',t:"'contained'|'outlined'|'text'|'tonal'",def:"'contained'"},{n:'size',t:"'sm'|'md'|'lg'",def:"'md'"},{n:'color',t:"'primary'|'secondary'|'error'|'success'|'neutral'",def:"'primary'"},{n:'startIcon',t:'IconName?'},{n:'disabled',t:'boolean',def:'false'},{n:'onClick',t:'() => void'}],
+  tokens:[t('fill (contained)','primary'),t('label (contained)','on-primary'),t('tonal fill','raised'),t('disabled fill','action-disabled-bg'),t('disabled label','action-disabled'),t('focus ring','focus-ring'),t('radius','r-md'),t('height','control-h'),t('hit area','target'),t('font','font-body')],
+  metrics:[['height','40 (sm 32, lg 44)'],['hit area','≥ 44'],['padding','h 16 (sm 12, lg 20)'],['radius','8'],['gap icon↔label','8'],['label','Plex Sans 600 / 14']]},
+ buttongroup:{name:'Button group',file:'src/components/ButtonGroup.tsx',desc:'Adjacent related buttons sharing one outline; inner dividers are 1px outline.',props:[{n:'children',t:'Button[]'},{n:'variant',t:"'text'|'outlined'",def:"'text'"}],tokens:[t('outline','outline'),t('radius','r-md')],metrics:[['outline','1px'],['radius','8 outer, 0 inner']]},
+ iconbutton:{name:'Icon button',file:'src/components/IconButton.tsx',desc:'Icon-only action, always a 44×44 target, with aria-label. Variants standard / filled / tonal / outlined; toggle mode via pressed (shows primary-container fill).',props:[{n:'icon',t:'IconName'},{n:'label',t:'string',d:'aria-label, required'},{n:'variant',t:"'standard'|'filled'|'tonal'|'outlined'",def:"'standard'"},{n:'pressed',t:'boolean?',d:'makes it a toggle'},{n:'disabled',t:'boolean',def:'false'}],
+  tokens:[t('icon','text-secondary'),t('filled bg','primary'),t('tonal bg','raised'),t('outline','outline-strong'),t('pressed bg','primary-container'),t('pressed icon','primary'),t('target','target')],metrics:[['size','44 × 44 (filled/tonal paint 40)'],['icon','20'],['radius','8']]},
+ fab:{name:'Floating action button',file:'src/components/Fab.tsx',desc:'The single primary action floating over the photo. regular 56 / small 44 / extended (icon + label).',props:[{n:'icon',t:'IconName'},{n:'label',t:'string?',d:'extended when set'},{n:'size',t:"'regular'|'small'",def:"'regular'"},{n:'color',t:"'primary'|'secondary'",def:"'primary'"}],tokens:[t('fill','primary'),t('icon/label','on-primary'),t('secondary fill','raised'),t('shadow','elev-2'),t('radius','r-lg'),t('z','z-fab')],metrics:[['regular','56 × 56'],['small','44 × 44'],['extended','h 48, padding 16/20'],['radius','12']]},
+ checkbox:{name:'Checkbox',file:'src/components/Checkbox.tsx',desc:'Binary or mixed choice in a 44px row. Unchecked, checked, indeterminate, disabled.',props:[{n:'checked',t:"boolean|'mixed'"},{n:'label',t:'string'},{n:'disabled',t:'boolean',def:'false'},{n:'onChange',t:'(v) => void'}],tokens:[t('box border','outline-strong'),t('checked fill','primary'),t('check mark','on-primary'),t('radius','r-sm')],metrics:[['box','18 × 18'],['border','2'],['row','≥ 44']]},
+ radio:{name:'Radio group',file:'src/components/RadioGroup.tsx',desc:'One choice from a short list; rows 44px.',props:[{n:'value',t:'string'},{n:'options',t:'{value,label,disabled?}[]'},{n:'onChange',t:'(v) => void'}],tokens:[t('ring','outline-strong'),t('selected ring + dot','primary')],metrics:[['ring','20'],['dot','10'],['row','≥ 44']]},
+ switch:{name:'Switch',file:'src/components/Switch.tsx',desc:'Instant on/off setting (Show mask, Invert). Use for toggles, never for actions.',props:[{n:'checked',t:'boolean'},{n:'label',t:'string?'},{n:'disabled',t:'boolean',def:'false'}],tokens:[t('track off','raised'),t('track border','outline-strong'),t('track on','primary'),t('thumb on','on-primary'),t('motion','dur-short')],metrics:[['track','40 × 24'],['thumb','16'],['row','≥ 44']]},
+ select:{name:'Select',file:'src/components/Select.tsx',desc:'Choose one value from a listbox. Closed: an outlined field with chevron. Open: listbox on overlay with the selected option tinted.',props:[{n:'label',t:'string'},{n:'value',t:'string'},{n:'options',t:'{value,label,hint?}[]'},{n:'onChange',t:'(v) => void'}],tokens:[t('field border','outline-strong'),t('listbox','overlay'),t('option hover','action-hover'),t('option selected','action-selected'),t('shadow','elev-2')],metrics:[['field height','44'],['option height','44'],['radius','8']]},
+ autocomplete:{name:'Autocomplete',file:'src/components/Autocomplete.tsx',desc:'Text field that filters a listbox as you type; matched text in primary.',props:[{n:'label',t:'string'},{n:'options',t:'string[]'},{n:'value',t:'string'},{n:'onChange',t:'(v) => void'}],tokens:[t('match','primary'),t('focus border','primary'),t('listbox','overlay')],metrics:[['field','44'],['option','44']]},
+ slider:{name:'Slider',file:'src/components/Slider.tsx',desc:'Continuous, discrete (marks), range, disabled. Label left, value right in mono; a bubble shows the value while dragging. Double-tap the thumb to reset to default; tap the value to type it.',props:[{n:'label',t:'string'},{n:'value',t:'number | [number, number]'},{n:'min',t:'number',def:'0'},{n:'max',t:'number',def:'1'},{n:'step',t:'number?',d:'discrete when set with marks'},{n:'format',t:'(v) => string',d:"e.g. v => `${Math.round(v*100)}%`"},{n:'defaultValue',t:'number',d:'double-tap resets to this'},{n:'onChange',t:'(v) => void'},{n:'onCommit',t:'(v) => void',d:'on release, for one undo step'}],
+  tokens:[t('rail','raised'),t('fill','primary'),t('thumb','text'),t('thumb halo (active)','action-focus'),t('value','font-mono'),t('target','target')],metrics:[['rail height','4'],['thumb','20'],['hit area (rail)','44'],['bubble','mono 12, overlay']]},
+ textfield:{name:'Text field',file:'src/components/TextField.tsx',desc:'filled / outlined / standard; with label, helper, error text, leading/trailing adornments. States: empty, focused (primary underline/border), filled, error, disabled.',props:[{n:'variant',t:"'filled'|'outlined'|'standard'",def:"'outlined'"},{n:'label',t:'string'},{n:'value',t:'string'},{n:'helperText',t:'string?'},{n:'error',t:'boolean',def:'false'},{n:'startAdornment',t:'ReactNode?'},{n:'endAdornment',t:'ReactNode?'},{n:'disabled',t:'boolean',def:'false'}],tokens:[t('border','outline-strong'),t('filled bg','raised'),t('focus','primary'),t('error','error'),t('label','text-secondary'),t('placeholder','text-disabled')],metrics:[['height','44'],['padding','h 12'],['radius','8 (filled: top only)']]},
+ togglebutton:{name:'Toggle button',file:'src/components/ToggleButtonGroup.tsx',desc:'Segmented control for 2–4 options: light type, blur method, mask tools. Single or multi-select; icons, labels or both.',props:[{n:'value',t:'string | string[]'},{n:'options',t:'{value,label?,icon?}[]'},{n:'exclusive',t:'boolean',def:'true'},{n:'onChange',t:'(v) => void'}],tokens:[t('track','raised'),t('selected','overlay'),t('selected label','text'),t('label','text-secondary'),t('selected shadow','elev-1')],metrics:[['height','44 track / 40 segment'],['radius','8 / 6'],['padding','2']]},
+ rating:{name:'Rating',file:'src/components/Rating.tsx',desc:'Stars for favouriting presets/recipes.',props:[{n:'value',t:'number'},{n:'max',t:'number',def:'5'},{n:'readOnly',t:'boolean',def:'false'}],tokens:[t('on','warning'),t('off','outline-strong')],metrics:[['star','20'],['gap','2'],['hit (editable)','44 per star']]},
+ avatar:{name:'Avatar',file:'src/components/Avatar.tsx',desc:'Initials, image, square (photos); sizes sm/md/lg; group overlaps with a paper ring.',props:[{n:'src',t:'string?'},{n:'initials',t:'string?'},{n:'size',t:"'sm'|'md'|'lg'",def:"'md'"},{n:'shape',t:"'circle'|'square'",def:"'circle'"}],tokens:[t('bg','raised'),t('text','text'),t('group ring','paper'),t('square radius','r-md')],metrics:[['sizes','28 / 40 / 56']]},
+ badge:{name:'Badge',file:'src/components/Badge.tsx',desc:'Count or dot on an icon (lights count, new presets).',props:[{n:'content',t:'number?',d:'dot when omitted'},{n:'children',t:'ReactNode'}],tokens:[t('fill','primary'),t('text','on-primary'),t('ring','paper')],metrics:[['number','min 18 × 18'],['dot','8'],['ring','2']]},
+ chip:{name:'Chip',file:'src/components/Chip.tsx',desc:'Compact attribute, filter or input token: filled / outlined; selected; with icon; deletable; disabled. 32px tall, 44px hit area.',props:[{n:'label',t:'string'},{n:'variant',t:"'filled'|'outlined'",def:"'filled'"},{n:'selected',t:'boolean',def:'false'},{n:'icon',t:'IconName?'},{n:'onDelete',t:'() => void?'}],tokens:[t('bg','raised'),t('outline','outline'),t('selected bg','primary-container'),t('selected text','on-primary-container'),t('radius','r-md')],metrics:[['height','32 (hit 44)'],['padding','h 12'],['icon','16']]},
+ divider:{name:'Divider',file:'src/components/Divider.tsx',desc:'1px separators: full, inset (64), vertical.',props:[{n:'variant',t:"'full'|'inset'",def:"'full'"},{n:'orientation',t:"'horizontal'|'vertical'",def:"'horizontal'"}],tokens:[t('color','divider')],metrics:[['thickness','1'],['inset','64']]},
+ list:{name:'List',file:'src/components/List.tsx',desc:'Rows with leading (icon/avatar), primary + secondary text, trailing (icon, switch, value). Subheader, selected and clickable states. Rows separated by 1px divider.',props:[{n:'items',t:'{primary,secondary?,leading?,trailing?,selected?,onClick?}[]'},{n:'subheader',t:'string?'}],tokens:[t('surface','paper'),t('divider','divider'),t('secondary text','text-secondary'),t('selected','action-selected'),t('hover','action-hover')],metrics:[['row','≥ 52'],['padding','16 left, 8 right'],['radius (list)','12']]},
+ table:{name:'Table',file:'src/components/Table.tsx',desc:'Compact data; header in caps overline; numeric cells mono and right-aligned; 44px rows.',props:[{n:'columns',t:'{key,label,numeric?}[]'},{n:'rows',t:'Record<string,any>[]'},{n:'selectedRow',t:'number?'}],tokens:[t('header','text-secondary'),t('rule','divider'),t('numbers','font-mono'),t('selected','action-selected')],metrics:[['row','44'],['cell padding','h 12']]},
+ tooltip:{name:'Tooltip',file:'src/components/Tooltip.tsx',desc:'Plain (inverted: text on bg) for labels of icon buttons; rich (overlay) for short explanations. Long-press on touch.',props:[{n:'title',t:'string'},{n:'description',t:'string?',d:'rich when set'},{n:'children',t:'ReactElement'}],tokens:[t('plain bg','text'),t('plain text','bg'),t('rich bg','overlay'),t('z','z-tooltip')],metrics:[['padding','4/8 (rich 12)'],['max width','220']]},
+ typography:{name:'Typography',file:'src/components/Text.tsx',desc:'Renders a type variant: h1–h6, subtitle1/2, body1/2, button, caption, overline, mono (values).',props:[{n:'variant',t:"'h1'…'h6'|'subtitle1'|'subtitle2'|'body1'|'body2'|'button'|'caption'|'overline'|'mono'",def:"'body1'"},{n:'color',t:"'text'|'text-secondary'|'primary'",def:"'text'"}],tokens:[t('display','font-display'),t('text','font-body'),t('values','font-mono')],metrics:[['scale','34/28/24/20/17/15 · 15/13 · 12/11']]},
+ icon:{name:'Icon',file:'src/components/Icon.tsx',desc:'Inline SVG sprite symbol; color = currentColor; outlined by default, filled variant.',props:[{n:'name',t:'IconName'},{n:'size',t:"'sm'|'md'|'lg'|'xl'",def:"'md'"},{n:'filled',t:'boolean',def:'false'}],tokens:[t('size','icon-size'),t('stroke','icon-stroke')],metrics:[['sizes','16 / 20 / 24 / 32'],['stroke','1.75']]},
+ alert:{name:'Alert',file:'src/components/Alert.tsx',desc:'Inline message with an icon. severity error/warning/info/success × variant standard (container) / filled / outlined. Never rely on color alone.',props:[{n:'severity',t:"'error'|'warning'|'info'|'success'",def:"'info'"},{n:'variant',t:"'standard'|'filled'|'outlined'",def:"'standard'"},{n:'title',t:'string?'},{n:'children',t:'ReactNode'}],tokens:[t('info bg','info-container'),t('info text','on-info-container'),t('error','error'),t('warning','warning'),t('success','success')],metrics:[['padding','12'],['radius','8'],['icon','20']]},
+ dialog:{name:'Dialog',file:'src/components/Dialog.tsx',desc:'Rare confirmations (replace photo); prefer undo. Title, body, right-aligned actions; over a scrim.',props:[{n:'open',t:'boolean'},{n:'title',t:'string'},{n:'children',t:'ReactNode'},{n:'actions',t:'ReactNode'},{n:'onClose',t:'() => void'}],tokens:[t('surface','overlay'),t('shadow','elev-3'),t('scrim','scrim'),t('radius','r-lg'),t('z','z-modal')],metrics:[['width','300 (max 90vw)'],['padding','20'],['radius','12']]},
+ snackbar:{name:'Snackbar',file:'src/components/Snackbar.tsx',desc:'Brief confirmation near the top of the photo, inverted for contrast over any image; optional action (Undo).',props:[{n:'message',t:'string'},{n:'action',t:'{label,onClick}?'},{n:'duration',t:'number',def:'2600'}],tokens:[t('bg','text'),t('text','bg'),t('action','primary-dark'),t('shadow','elev-3'),t('z','z-snackbar')],metrics:[['height','≥ 48'],['radius','8'],['max width','340']]},
+ progress:{name:'Progress',file:'src/components/Progress.tsx',desc:'Linear and circular; determinate (value) or indeterminate.',props:[{n:'variant',t:"'linear'|'circular'",def:"'linear'"},{n:'value',t:'number?',d:'indeterminate when omitted'}],tokens:[t('track','raised'),t('indicator','primary')],metrics:[['linear','4 high'],['circular','28, 3 stroke']]},
+ skeleton:{name:'Skeleton',file:'src/components/Skeleton.tsx',desc:'Shimmering placeholders: text, rect, circle.',props:[{n:'variant',t:"'text'|'rect'|'circle'",def:"'text'"},{n:'width',t:'number|string'},{n:'height',t:'number|string'}],tokens:[t('base','raised'),t('shimmer','overlay')],metrics:[['text height','12'],['animation','1.4 s linear']]},
+ backdrop:{name:'Backdrop',file:'src/components/Backdrop.tsx',desc:'Scrim with a spinner and message during a blocking task.',props:[{n:'open',t:'boolean'},{n:'message',t:'string?'}],tokens:[t('scrim','scrim'),t('text','text')],metrics:[['opacity','72%']]},
+ appbar:{name:'App bar',file:'src/components/AppBar.tsx',desc:'Top bar. Over the photo: transparent with a fade from bg. Elsewhere: paper with a bottom hairline. Holds wordmark or title + 44px icon buttons + one contained action.',props:[{n:'title',t:'ReactNode'},{n:'subtitle',t:'string?'},{n:'transparent',t:'boolean',def:'false'},{n:'start',t:'ReactNode?'},{n:'end',t:'ReactNode?'}],tokens:[t('bg','paper'),t('rule','divider'),t('title','font-display'),t('height','appbar-h'),t('z','z-appbar')],metrics:[['height','52'],['padding','12 left, 4 right'],['title','Manrope 700 / 17']]},
+ card:{name:'Card',file:'src/components/Card.tsx',desc:'Media + content + actions; elevated or outlined; clickable; selected shows a 2px primary ring. Used for presets and light images.',props:[{n:'media',t:'ReactNode'},{n:'title',t:'string'},{n:'subtitle',t:'string?'},{n:'actions',t:'ReactNode?'},{n:'variant',t:"'elevated'|'outlined'",def:"'elevated'"},{n:'selected',t:'boolean',def:'false'},{n:'onClick',t:'() => void?'}],tokens:[t('surface','paper'),t('shadow','elev-1'),t('hover shadow','elev-2'),t('outline','divider'),t('selected ring','primary'),t('radius','r-lg')],metrics:[['radius','12'],['content padding','12'],['media','4:3']]},
+ paper:{name:'Paper',file:'src/components/Paper.tsx',desc:'Base surface; elevation 0–3 maps to the surface ladder + shadow levels.',props:[{n:'elevation',t:'0|1|2|3',def:'1'},{n:'children',t:'ReactNode'}],tokens:[t('0–1','paper'),t('2','raised'),t('3','overlay'),t('shadows','elev-1')],metrics:[['radius','12'],['padding','16']]},
+ accordion:{name:'Accordion',file:'src/components/Accordion.tsx',desc:'One panel per blur or mask part. Summary row: index, name, value (mono), visibility toggle, chevron. Expanded panel gets a primary hairline and holds the item controls.',props:[{n:'title',t:'string'},{n:'value',t:'string?'},{n:'index',t:'number?'},{n:'expanded',t:'boolean'},{n:'onToggle',t:'() => void'},{n:'visible',t:'boolean?'},{n:'children',t:'ReactNode'}],tokens:[t('bg','raised'),t('rule','divider'),t('expanded ring','primary'),t('chevron','text-secondary'),t('motion','dur-short')],metrics:[['summary height','44'],['radius','8'],['gap between','4']]},
+ bottomnav:{name:'Bottom navigation',file:'src/components/BottomNavigation.tsx',desc:'Top-level destinations (not yet used: reserved for Edit / Recipes / Projects / Account).',props:[{n:'value',t:'string'},{n:'items',t:'{value,label,icon}[]'}],tokens:[t('bg','paper'),t('selected','primary'),t('idle','text-secondary')],metrics:[['height','60 + safe area'],['label','Plex Sans 500 / 11']]},
+ drawer:{name:'Drawer',file:'src/components/Drawer.tsx',desc:'Anchor bottom = the editor sheet: grabber, two heights (compact shows header + main controls; expanded shows everything), shrinks to a one-line peek while a finger is on the photo. Anchor left = modal navigation.',props:[{n:'anchor',t:"'bottom'|'left'",def:"'bottom'"},{n:'height',t:"'peek'|'compact'|'expanded'",def:"'compact'"},{n:'open',t:'boolean'},{n:'children',t:'ReactNode'}],tokens:[t('surface','paper'),t('shadow','elev-3'),t('grabber','outline'),t('radius','r-lg'),t('motion','ease'),t('z','z-drawer')],metrics:[['grabber','36 × 4'],['compact height','≈ 40% viewport'],['expanded','≈ 70% viewport'],['radius','12 top']]},
+ tabs:{name:'Tabs',file:'src/components/Tabs.tsx',desc:'Fixed tabs (Light · Blurs · Mask) with optional icon and count; 2px primary indicator slides between tabs.',props:[{n:'value',t:'string'},{n:'tabs',t:'{value,label,icon?,count?}[]'},{n:'onChange',t:'(v) => void'}],tokens:[t('selected','text'),t('idle','text-secondary'),t('indicator','primary'),t('rule','divider'),t('motion','dur-short')],metrics:[['height','44'],['indicator','2']]},
+ menu:{name:'Menu',file:'src/components/Menu.tsx',desc:'Popover list of actions, e.g. a light\'s ⋯ menu: Rename, Duplicate, Save as recipe, Delete (destructive, last, separated).',props:[{n:'items',t:'{label,icon?,shortcut?,destructive?,onClick}[]'},{n:'anchor',t:'Element'},{n:'open',t:'boolean'}],tokens:[t('surface','overlay'),t('hover','action-hover'),t('destructive','error'),t('separator','divider'),t('shadow','elev-2')],metrics:[['item height','44'],['min width','200'],['radius','8']]},
+ link:{name:'Link',file:'src/components/Link.tsx',desc:'Inline link (steel) or quiet link (secondary text).',props:[{n:'href',t:'string'},{n:'quiet',t:'boolean',def:'false'}],tokens:[t('color','link'),t('quiet','text-secondary')],metrics:[['underline offset','3']]},
+ stepper:{name:'Stepper',file:'src/components/Stepper.tsx',desc:'Horizontal steps for the first-run tutorial (Light → Blur → Mask) and compact dots.',props:[{n:'steps',t:'string[]'},{n:'active',t:'number'},{n:'variant',t:"'steps'|'dots'",def:"'steps'"}],tokens:[t('active','primary'),t('done','primary-container'),t('idle','raised'),t('line','divider')],metrics:[['step dot','24'],['dots','6 (active 16 wide)']]},
+ speeddial:{name:'Speed dial',file:'src/components/SpeedDial.tsx',desc:'FAB that fans out labelled actions: the New light button revealing Light image / Radial gradient / Preset.',props:[{n:'actions',t:'{label,icon,onClick}[]'},{n:'open',t:'boolean'}],tokens:[t('main','primary'),t('actions','raised'),t('labels','overlay'),t('z','z-fab')],metrics:[['action','44'],['gap','12']]},
+ layout:{name:'Box · Container · Grid · Stack',file:'src/components/layout.tsx',desc:'Layout utilities: Box (padding), Container (max 600, gutter), Grid (2 columns), Stack (vertical) and Row (horizontal) with gap from the spacing scale.',props:[{n:'gap',t:'SpacingToken',def:"'sp-12'"},{n:'columns',t:'number',def:'2'}],tokens:[t('gaps','sp-8'),t('gutter','gutter')],metrics:[['container','600 max']]},
+ swatch:{name:'Color swatch',file:'src/components/ColorSwatch.tsx',desc:'Extension. Color temperature picker: Kelvin presets, gels and Custom in one scrolling row. Selected: 2px primary ring with paper gap. Label in mono under each swatch.',props:[{n:'value',t:'string'},{n:'options',t:'{label,color}[]'},{n:'onChange',t:'(color) => void'},{n:'allowCustom',t:'boolean',def:'true'}],tokens:[t('selected ring','primary'),t('gap ring','paper'),t('label','font-mono')],metrics:[['swatch','32'],['target','44 wide'],['gap','8']]},
+ layerrow:{name:'Layer row',file:'src/components/LayerRow.tsx',desc:'Extension. One light in the list: drag handle (44) · thumbnail of the light alone · name + mono summary · visibility toggle (44). States: default, active (raised + 3px primary edge), dragging (overlay + elev-3 + primary hairline), hidden (dimmed).',props:[{n:'name',t:'string'},{n:'summary',t:'string'},{n:'thumbnail',t:'string'},{n:'visible',t:'boolean'},{n:'active',t:'boolean',def:'false'},{n:'onOpen',t:'() => void'},{n:'onToggleVisible',t:'() => void'},{n:'dragHandleProps',t:'object'}],tokens:[t('bg','paper'),t('active bg','raised'),t('active edge','primary'),t('dragging bg','overlay'),t('dragging shadow','elev-3'),t('summary','font-mono')],metrics:[['height','60'],['thumbnail','48'],['handle / eye','44 × 44'],['radius','8']]},
+ handle:{name:'Canvas handle',file:'src/canvas/Handle.ts',desc:'Extension. Drawn on the overlay canvas over the photo: light center (crosshair), ellipse axis handles (small), blur center (steel). Dark outer ring keeps them visible on bright light. Off-screen: an edge arrow + label.',props:[{n:'kind',t:"'center'|'axis'|'blur-center'"},{n:'x',t:'number'},{n:'y',t:'number'}],tokens:[t('light handles','primary'),t('blur handle','secondary'),t('hit radius','target')],metrics:[['center','28'],['axis','16'],['hit radius','≥ 22 (44 diameter)']]},
+};
+
+/* ===== Copy-as-prompt — per component + one "Install design system" prompt ===== */
+const LANGS=['React (TypeScript + CSS)','HTML + CSS','React Native','SwiftUI','Jetpack Compose (Kotlin)','Flutter (Dart)'];
+let promptLang=LANGS[0];
+langSel.innerHTML=LANGS.map(l=>`<option${l===promptLang?' selected':''}>${l}</option>`).join('');
+langSel.onchange=()=>promptLang=langSel.value;
+const TOKEN_GROUPS={
+ 'Palette · neutrals':['--sunken','--bg','--paper','--raised','--overlay','--divider','--outline','--outline-strong','--hairline'],
+ 'Palette · text':['--text','--text-secondary','--text-disabled','--ink'],
+ 'Palette · roles (main/light/dark/contrastText + container pair)':['--primary','--primary-light','--primary-dark','--on-primary','--primary-container','--on-primary-container','--secondary','--secondary-light','--secondary-dark','--on-secondary','--secondary-container','--on-secondary-container','--error','--error-light','--error-dark','--on-error','--error-container','--on-error-container','--warning','--warning-light','--warning-dark','--on-warning','--warning-container','--on-warning-container','--success','--success-light','--success-dark','--on-success','--success-container','--on-success-container','--info','--info-light','--info-dark','--on-info','--info-container','--on-info-container','--link'],
+ 'Palette · action':['--action-active','--action-hover','--action-pressed','--action-selected','--action-focus','--action-disabled','--action-disabled-bg','--scrim'],
+ 'Spacing':['--spacing-unit','--sp-2','--sp-4','--sp-8','--sp-12','--sp-16','--sp-20','--sp-24','--sp-32','--sp-48','--sp-64','--opt-1','--opt-3'],
+ 'Sizes':['--target','--control-h','--control-h-sm','--row-h','--appbar-h'],
+ 'Shape':['--r-none','--r-xs','--r-sm','--r-md','--r-lg','--r-full'],
+ 'Shadows':['--elev-0','--elev-1','--elev-2','--elev-3'],
+ 'Craft':['--ring','--focus-ring','--signature','--safelight-glow'],
+ 'Type families':['--font-display','--font-body','--font-mono'],
+ 'Transitions':['--dur-shortest','--dur-shorter','--dur-short','--dur-standard','--dur-complex','--dur-enter','--dur-leave','--ease','--ease-in-out','--ease-out','--ease-in','--ease-sharp'],
+ 'z-index':['--z-fab','--z-appbar','--z-drawer','--z-modal','--z-snackbar','--z-tooltip'],
+ 'Breakpoints':['--bp-sm','--bp-md','--bp-lg','--bp-xl'],
+ 'Icons':['--icon-size','--icon-stroke']};
+function tokenLines(){const out=[];for(const[grp,names]of Object.entries(TOKEN_GROUPS)){const rows=names.map(n=>{const v=css(n);return v?`- ${n} = ${v}`:null;}).filter(Boolean);if(rows.length)out.push(`### ${grp}`,...rows,'');}return out;}
+function foundationsBody(){const L=[`## Foundations: design tokens (single source of truth)`,`Define every token below as a named constant in ONE theme file, idiomatic to ${promptLang} (CSS custom properties / theme object / ThemeData / asset catalog). Components reference tokens by name, never raw values.`,'',...tokenLines(),`### Type scale`];
+ TYPE.forEach(([n,m])=>L.push(`- ${n}: ${m}`));
+ L.push('',`### Rules`,`- Every fill keeps its --on-* foreground; pairs are WCAG-checked (body ≥ 4.5:1). *-dark variants are for borders/pressed edges only, never under text.`,`- Neutrals are graphite with a slight warm tint (OKLCH C .004, h 55); keep it, so the UI never colour-casts the photo.`,`- Every interactive element has a ≥ 44px hit area (pad the hit area, not the paint).`,`- Status is never shown by color alone (error and primary are both warm): pair with an icon and words.`);return L.join('\n');}
+const resolve=tk=>{const v=css('--'+tk.n);return{...tk,v:v||'—',c:/^#|^rgb/.test(v)?v:null};};
+function buildPrompt(key){const s=SPECS[key];const L=[`# Add or update the \`${s.name}\` component (${promptLang})`,'',`Part of the Lumière "Darkroom" design system. If a component with this role ALREADY EXISTS, modify it IN PLACE to match this spec (the source of truth); don't duplicate it, and note any breaking prop/token change with a migration note. If it doesn't exist, create it at \`${s.file}\`, reusing the existing tokens and atoms.`,'',`## What it is`,s.desc,'',`## Props`];
+ s.props.forEach(p=>L.push(`- \`${p.n}\`: ${p.t}${p.def?` (default ${p.def})`:''}${p.d?` — ${p.d}`:''}`));
+ L.push('',`## Design tokens (from the shared token layer; never inline)`);s.tokens.map(resolve).forEach(tk=>L.push(`- --${tk.n} = ${tk.v}   // ${tk.r}`));
+ L.push('',`## Metrics`);s.metrics.forEach(([k,v])=>L.push(`- ${k}: ${v}`));
+ L.push('',`## Requirements`,`- Implement every variant and state listed.`,`- Reference tokens by name; keep each fill paired with its --on-* foreground (WCAG ≥ 4.5:1).`,`- Hit area ≥ 44px for anything interactive; visible focus ring (--focus-ring).`,`- Respect prefers-reduced-motion.`,`- Output complete ${promptLang} code plus a short usage example.`);return L.join('\n');}
+function copyPrompt(key){copyText(buildPrompt(key));toast(`Copied: ${SPECS[key].name} → ${promptLang}`);}
+function fullSystemPrompt(){const keys=Object.keys(SPECS);const L=[`# Install or update the Lumière "Darkroom" design system (${promptLang})`,'',`Set up this design system in ${promptLang}. If it doesn't exist, scaffold it; if parts exist, update them IN PLACE to match this spec (the source of truth). Modify, don't duplicate; list breaking changes with migration notes.`,'',`## Build order`,`1. Implement the **foundation token layer** below as the single source of truth.`,`2. Build the components. They're independent and can be split across parallel workers, but **every component imports the shared token layer from step 1**; never redefine colors or sizes locally. Keep naming and states consistent.`,`3. Reconcile: one components index + a pass confirming every component references only named tokens.`,'','---','',foundationsBody(),'','---','',`## Components (${keys.length})`];
+ keys.forEach(k=>{const s=SPECS[k];L.push('',`### ${s.name} — \`${s.file}\``,s.desc,`- props: ${s.props.map(p=>p.n+': '+p.t).join(', ')}`,`- tokens: ${s.tokens.map(tk=>'--'+tk.n).join(', ')}`,`- metrics: ${s.metrics.map(m=>m[0]+' '+m[1]).join(', ')}`);});
+ L.push('','## Rules',`- One source of truth for tokens; components reference them by name.`,`- Keep fill/--on-* pairs; ≥ 44px targets; icon + words for status.`,`- Output: the token file, then each component with a short usage example.`);return L.join('\n');}
+function copyFullSystem(){copyText(fullSystemPrompt());toast(`Copied: install design system (${Object.keys(SPECS).length} components) → ${promptLang}`);}
+function copyText(x){try{navigator.clipboard.writeText(x).catch(()=>{});}catch{}}
+document.querySelectorAll('main section[id]').forEach(sec=>{const key=sec.id;if(!SPECS[key])return;const h=sec.querySelector('h2.sec');if(!h||h.querySelector('.sec-prompt'))return;
+ const b=document.createElement('button');b.className='sec-prompt';b.type='button';b.textContent='Copy as prompt';b.addEventListener('click',()=>copyPrompt(key));h.appendChild(b);});
+
+/* ===== Dev Mode + Inspector ===== */
+function toggleDev(){const on=document.body.classList.toggle('dev');devToggle.classList.toggle('on',on);devToggle.textContent=on?'Dev Mode · on':'Dev Mode';if(!on)closeInspector();}
+function closeInspector(){document.body.classList.remove('inspecting');document.querySelectorAll('.insp-sel').forEach(e=>e.classList.remove('insp-sel'));}
+document.addEventListener('click',e=>{if(e.target.closest('#inspector')||e.target.closest('#topctl'))return;if(!document.body.classList.contains('dev'))return;
+ const el=e.target.closest('[data-insp]');if(el&&SPECS[el.dataset.insp]){e.preventDefault();selectComp(el,el.dataset.insp);}});
+function selectComp(el,key){document.querySelectorAll('.insp-sel').forEach(x=>x.classList.remove('insp-sel'));el.classList.add('insp-sel');document.body.classList.add('inspecting');const s=SPECS[key];
+ const props=s.props.map(p=>`<div class="prop"><span class="pn">${p.n}</span> <span class="pt">${p.t.replace(/</g,'&lt;')}</span>${p.def?` <span class="pdef">= ${p.def}</span>`:''}${p.d?`<div class="pd">${p.d}</div>`:''}</div>`).join('');
+ const toks=s.tokens.map(resolve).map(tk=>`<div class="tok" data-copy="${tk.v.replace(/"/g,'&quot;')}"><div class="tsw" style="background:${tk.c||'var(--raised)'}"></div><div><div class="tn">--${tk.n}</div><div class="tr">${tk.r}</div></div><div class="tv">${tk.v}</div></div>`).join('');
+ const mets=s.metrics.map(([k,v])=>`<div class="metric"><span class="mk">${k}</span><span>${v}</span></div>`).join('');
+ inspectorBody.innerHTML=`<div class="nm">${s.name}</div><div class="file">${s.file}</div><div class="desc">${s.desc}</div><h4>Properties</h4>${props}<h4>Design tokens · click to copy</h4>${toks}<h4>Metrics</h4>${mets}<button class="btn btn-contained copyprompt" onclick="copyPrompt('${key}')">Copy as prompt</button>`;
+ inspectorBody.querySelectorAll('[data-copy]').forEach(n=>n.onclick=()=>{copyText(n.dataset.copy);toast('Copied '+n.dataset.copy);});}
+function toast(msg){const c=document.getElementById('copied');c.textContent=msg;c.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>c.classList.remove('show'),1400);}
+</script>
+</body>
+</html>

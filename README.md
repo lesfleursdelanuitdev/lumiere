@@ -66,6 +66,7 @@ npm run test:selection      # also runs AI subject selection (slow without a GPU
 | `models/u2netp.json` | U²-Net-p salient-object model, converted for TensorFlow.js (float16 weights) |
 | `tools/convert_u2netp.py` | Rebuilds `models/u2netp.json` from the ONNX model |
 | `tests/smoke.mjs` | Headless browser smoke test |
+| `design-system/` | The "Darkroom" design system: tokens (`styles.css`), living style guide with Dev Mode and Copy-as-prompt (`index.html`), concept screens, icon sprite |
 | `docs/PLAN.md` | Product and design plan: the layer model, interface and roadmap |
 | `docs/photocraft-evaluation.md` | Why the app does not build on PhotoCraft (measurements) |
 
