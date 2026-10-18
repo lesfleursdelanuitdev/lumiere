@@ -106,6 +106,7 @@ Why not PhotoCraft: its filters run on one CPU core in the browser; radial blur 
 2. **Selection quality on your own photographs.** Fine petals, translucent petals, busy
    backgrounds. If U²-Net-p is not good enough, try a larger model (for example BiRefNet, MIT
    license) with a WebGPU path, and tap-to-select (point prompts) for Object.
+   See [ai-models.md](ai-models.md) for the candidate models, licenses and evaluation plan.
 3. **Installable app and offline use:** web app manifest, service worker, IndexedDB autosave so a
    project survives a reload or a closed tab.
 4. **Large photos:** tiled export above about 16.7 megapixels; 16-bit render targets where the

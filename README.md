@@ -78,6 +78,7 @@ npm run test:selection      # also runs AI subject selection (slow without a GPU
 | `tests/smoke.mjs` | Headless browser smoke test |
 | `design-system/` | The "Darkroom" design system: tokens (`styles.css`), living style guide with Dev Mode and Copy-as-prompt (`index.html`), concept screens, icon sprite |
 | `docs/PLAN.md` | Product and design plan: the layer model, interface and roadmap |
+| `docs/ai-models.md` | Plan for on-device AI: candidate models (SAM 2, Depth Anything, BiRefNet), licenses, evaluation |
 | `docs/photocraft-evaluation.md` | Why the app does not build on PhotoCraft (measurements) |
 
 ## How rendering works
