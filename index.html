@@ -1057,13 +1057,13 @@ function maskSection(l) {
 function renderReadoutsOnly() { if (state.ui === "editor" && (state.section === "blurs" || state.section === "light")) renderPanel(); }
 
 /* ── menus: one floating design-system menu, anchored to the button that opened it ── */
-const pop = $("#pop"); let popAnchor = null, popKind = null;
+const pop = $("#pop"); let popAnchor = null, popKind = null, popAt = 0;
 function openMenu(anchor, kind, items) {
   if (popKind === kind && !pop.hidden) { closeMenu(); return; }
   closeMenu(true);
   pop.innerHTML = items.map(it => it === "sep" ? `<div class="sep" role="separator"></div>` :
     `<button class="mi${it.danger ? " danger" : ""}" role="menuitem" data-act="${it.act}"${it.val ? ` data-val="${it.val}"` : ""}${it.id ? ` data-id="${it.id}"` : ""}${it.disabled ? " disabled" : ""}>${it.icon ? ico(it.icon) : ""}<span class="grow">${it.text}</span>${it.checked ? ico("check", "ok") : ""}</button>`).join("");
-  pop.hidden = false; popAnchor = anchor; popKind = kind; anchor.setAttribute("aria-expanded", "true");
+  pop.hidden = false; popAnchor = anchor; popKind = kind; popAt = performance.now(); anchor.setAttribute("aria-expanded", "true");
   const r = anchor.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight, top = $("#top").offsetHeight;
   pop.style.left = clamp(r.right - w, 8, innerWidth - w - 8) + "px";
   const above = r.top - h - 4 >= top; pop.style.top = (above ? r.top - h - 4 : Math.min(r.bottom + 4, innerHeight - h - 8)) + "px";
@@ -1082,7 +1082,7 @@ pop.addEventListener("keydown", e => {
   const items = [...pop.querySelectorAll(".mi:not([disabled])")], i = items.indexOf(document.activeElement);
   items[(i + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length]?.focus();
 });
-panel.addEventListener("scroll", () => closeMenu(true), { passive: true });
+panel.addEventListener("scroll", () => { if (performance.now() - popAt > 500) closeMenu(true); }, { passive: true });   // not the scroll that brought the button into view
 
 panel.addEventListener("input", e => {
   const k = e.target.dataset.sl, l = activeLayer();
