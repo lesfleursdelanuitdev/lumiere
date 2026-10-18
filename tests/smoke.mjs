@@ -134,6 +134,12 @@ try {
     const sel = await page.evaluate(() => { const p = state.layers.find(x => x.id === state.activeId).mask.pieces.at(-1), { mw, mh } = state.doc, at = (u, v) => p.data?.[Math.round(v * mh) * mw + Math.round(u * mw)];
       return { points: p.points?.length, center: at(0.52, 0.4), corner: at(0.05, 0.95), toast: document.querySelector("#toast").textContent }; });
     check(sel.points === 1 && sel.center > 200 && sel.corner < 50, `tapping the flower selects it (${JSON.stringify(sel)})`);
+    // Memory budget for tap-to-select (reading the photo, and one tap), same reason as above.
+    const samPeak = await page.evaluate(async () => { const sam = await ensureSam(), mb = p => Math.round(p.peakBytes / 1048576); let f;
+      const enc = await tf.profile(async () => { f = await sam.encode(assets.get("base").img); return tf.scalar(0); });
+      const dec = await tf.profile(async () => { await sam.decode(f, [[0.52, 0.4, 1]]); return tf.scalar(0); }); sam.release(f);
+      return { read: mb(enc), tap: mb(dec) }; });
+    check(samPeak.read < 200 && samPeak.tap < 200, `tap-to-select stays within its GPU memory budget (${JSON.stringify(samPeak)} MB of 200 MB)`);
   }
   check(errors.length === 0, "no page errors" + (errors.length ? ": " + errors.join("; ") : ""));
 } finally { await browser.close(); server.close(); }

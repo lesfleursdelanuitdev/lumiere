@@ -60,9 +60,9 @@
     // as soon as it returns (each runs in its own small tf.tidy), and big steps run in slices.
     const layerNorm = (x, k, eps, w = W) => tf.tidy(() => { const { mean, variance } = tf.moments(x, -1, true); return x.sub(mean).mul(tf.rsqrt(variance.add(eps))).mul(w(k + ".g")).add(w(k + ".b")); });
     const gelu = x => tf.tidy(() => x.mul(tf.erf(x.mul(Math.SQRT1_2)).add(1)).mul(0.5));   // exact GELU, as torch.nn.GELU
-    // softmax(q kᵀ / √d) v on [batch, n, d] tensors, in slices of queries so the score matrix stays small (≤ 4 M values)
+    // softmax(q kᵀ / √d) v on [batch, n, d] tensors, in slices of queries so the score matrix stays small (≤ 2 M values)
     function sdpa(q, k, v) {
-      const [B, Nq, d] = q.shape, Nk = k.shape[1], LIMIT = 1 << 22, step = Math.max(1, Math.floor(LIMIT / (B * Nk)));
+      const [B, Nq, d] = q.shape, Nk = k.shape[1], LIMIT = 1 << 21, step = Math.max(1, Math.floor(LIMIT / (B * Nk)));
       const one = qq => tf.tidy(() => tf.matMul(tf.softmax(tf.matMul(qq.mul(1 / Math.sqrt(d)), k, false, true)), v));
       if (step >= Nq) return one(q);
       const parts = []; for (let i = 0; i < Nq; i += step) { const n = Math.min(step, Nq - i); parts.push(tf.tidy(() => one(q.slice([0, i, 0], [B, n, d])))); }
@@ -89,19 +89,24 @@
       const C = x.shape[3]; x = x.reshape([Hp / w, Wp / w, w, w, C]).transpose([0, 2, 1, 3, 4]).reshape([1, Hp, Wp, C]);
       return Hp > H || Wp > Wd ? x.slice([0, 0, 0, 0], [1, H, Wd, C]) : x;
     }
-    function attention(x, k, b) {   // MultiScaleAttention on [B, h, w, C]
-      const [B, h, w] = x.shape, hd = b.dimOut / b.heads;
-      const qkv = linear(x, k + ".qkv").reshape([B, h * w, 3, b.heads, hd]);
-      let [q, kk, v] = tf.split(qkv, 3, 2).map(t => t.reshape([B, h * w, b.heads, hd]));
-      let hq = h, wq = w;
-      if (b.qStride) { q = tf.maxPool(q.reshape([B, h, w, b.dimOut]), 2, 2, "valid"); [, hq, wq] = q.shape; q = q.reshape([B, hq * wq, b.heads, hd]); }
-      const heads = t => t.transpose([0, 2, 1, 3]).reshape([B * b.heads, -1, hd]);
-      const o = sdpa(heads(q), heads(kk), heads(v)).reshape([B, b.heads, hq * wq, hd]).transpose([0, 2, 1, 3]).reshape([B, hq, wq, b.dimOut]);
-      return linear(o, k + ".proj");
+    function attention(x, k, b) {   // MultiScaleAttention on [B, h, w, C]; each intermediate is freed once its next form exists
+      const [B, h, w] = x.shape, hd = b.dimOut / b.heads, flat = x.reshape([-1, b.dim]);
+      // q, k and v as three products, instead of one combined result that is then split (three more copies)
+      const wq = W(k + ".qkv.w"), wb = W(k + ".qkv.b"), ws = tf.split(wq, 3, 1), bs = tf.split(wb, 3);
+      const proj = j => tf.tidy(() => tf.matMul(flat, ws[j]).add(bs[j]));
+      const heads = (t, n) => tf.tidy(() => t.reshape([B, n, b.heads, hd]).transpose([0, 2, 1, 3]).reshape([B * b.heads, n, hd]));
+      let q = proj(0), hq = h, wq2 = w;
+      if (b.qStride) { const p = tf.tidy(() => tf.maxPool(q.reshape([B, h, w, b.dimOut]), 2, 2, "valid")); q.dispose(); q = p; [, hq, wq2] = q.shape; }
+      const Q = heads(q, hq * wq2); q.dispose();
+      const [K, V] = [1, 2].map(j => { const t = proj(j), r = heads(t, h * w); t.dispose(); return r; });
+      [wq, wb, ...ws, ...bs].forEach(t => t.dispose()); flat.dispose();
+      const o = sdpa(Q, K, V); [Q, K, V].forEach(t => t.dispose());
+      const out = tf.tidy(() => linear(o.reshape([B, b.heads, hq * wq2, hd]).transpose([0, 2, 1, 3]).reshape([B, hq, wq2, b.dimOut]), k + ".proj")); o.dispose();
+      return out;
     }
-    // The first stages see 65,536 positions, so they run in slices of about TOKENS positions,
-    // waiting for the GPU after each slice so freed memory is really released.
-    const TOKENS = 8192;
+    // Blocks run in slices sized so that each temporary result holds at most about BUDGET values
+    // (8 MB), waiting for the GPU after each slice so freed memory is really released.
+    const BUDGET = 1 << 21;
     async function sliced(x, n, fn) {   // fn on slices of the first axis of x, results joined again
       const N = x.shape[0], rest = x.shape.slice(1), parts = [];
       for (let i = 0; i < N; i += n) { const m = Math.min(n, N - i);
@@ -109,15 +114,26 @@
       if (parts.length === 1) return parts[0];
       const out = tf.concat(parts); parts.forEach(t => t.dispose()); return out;
     }
+    // Where a block widens the channels, its shortcut is projected (and pooled) in bands of an even
+    // number of rows, rather than projecting all positions at once.
+    async function skipPath(xn, k, b) {
+      const [, H, Wd, C] = xn.shape, rows = Math.max(2, Math.floor(BUDGET / (Wd * b.dimOut)) & ~1), parts = [];
+      for (let r = 0; r < H; r += rows) {
+        const part = tf.tidy(() => { const s = linear(xn.slice([0, r, 0, 0], [1, Math.min(rows, H - r), Wd, C]), k + ".skip"); return b.qStride ? tf.maxPool(s, 2, 2, "valid") : s; });
+        parts.push(part); await gpuWait(part);
+      }
+      if (parts.length === 1) return parts[0];
+      const out = tf.concat(parts, 1); parts.forEach(t => t.dispose()); return out;
+    }
     async function block(x, i) {   // x stays the caller's to dispose
       const b = blocks[i], k = "blk" + i, [, H, Wd] = x.shape;
       // attention half
       const xn = layerNorm(x, k + ".n1", 1e-6);
-      const shortcut = b.dim === b.dimOut ? x : tf.tidy(() => { const s = linear(xn, k + ".skip"); return b.qStride ? tf.maxPool(s, 2, 2, "valid") : s; });
+      const shortcut = b.dim === b.dimOut ? x : await skipPath(xn, k, b);
       let a;
       if (b.window > 0) {
         const h = tf.tidy(() => windowPartition(xn, b.window)[0]); xn.dispose();
-        const wa = await sliced(h, Math.max(1, Math.floor(TOKENS / (b.window * b.window))), part => attention(part, k, b)); h.dispose();
+        const wa = await sliced(h, Math.max(1, Math.floor(BUDGET / (3 * b.dimOut * b.window * b.window))), part => attention(part, k, b)); h.dispose();
         const win = b.qStride ? b.window / 2 : b.window, [, H2, W2] = shortcut.shape;
         a = tf.tidy(() => windowUnpartition(wa, win, [Math.ceil(H2 / win) * win, Math.ceil(W2 / win) * win], [H2, W2])); wa.dispose();
       } else { a = tf.tidy(() => attention(xn, k, b)); xn.dispose(); }
@@ -126,7 +142,7 @@
       // feed-forward half, in slices of positions
       const [, H3, W3, C3] = y.shape, w = ["fc1.w", "fc1.b", "fc2.w", "fc2.b", "n2.g", "n2.b"].map(n => W(k + "." + n)), [fc1w, fc1b, fc2w, fc2b, g, bb] = w;
       const flat = y.reshape([-1, C3]);
-      const ff = await sliced(flat, TOKENS, r => { const { mean, variance } = tf.moments(r, -1, true), n = r.sub(mean).mul(tf.rsqrt(variance.add(1e-6))).mul(g).add(bb);
+      const ff = await sliced(flat, Math.max(256, Math.floor(BUDGET / (4 * C3))), r => { const { mean, variance } = tf.moments(r, -1, true), n = r.sub(mean).mul(tf.rsqrt(variance.add(1e-6))).mul(g).add(bb);
         return r.add(tf.matMul(gelu(tf.matMul(n, fc1w).add(fc1b)), fc2w).add(fc2b)); });
       w.forEach(t => t.dispose()); flat.dispose(); y.dispose();
       const out = ff.reshape([1, H3, W3, C3]); ff.dispose(); return out;
