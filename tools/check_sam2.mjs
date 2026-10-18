@@ -31,7 +31,7 @@ try {
   if (tfPath) await page.addScriptTag({ content: await readFile(tfPath, "utf8") }); else await page.addScriptTag({ url: "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js" });
   await page.addScriptTag({ url: url + "sam2.js" });
   const report = await page.evaluate(async () => {
-    tf.env().set("WEBGL_DELETE_TEXTURE_THRESHOLD", 0); await tf.setBackend("webgl"); await tf.ready();
+    tf.env().set("WEBGL_DELETE_TEXTURE_THRESHOLD", 0); tf.env().set("WEBGL_CONV_IM2COL", false); await tf.setBackend("webgl");   /* as the app */ await tf.ready();
     const get = async n => new Float32Array(await (await fetch("/ref/" + n)).arrayBuffer());
     const diff = (a, b) => { let m = 0, s = 0, r = 0; for (let i = 0; i < a.length; i++) { const d = Math.abs(a[i] - b[i]); if (d > m) m = d; s += d; r = Math.max(r, Math.abs(b[i])); } return { max: +m.toFixed(5), mean: +(s / a.length).toFixed(6), range: +r.toFixed(3) }; };
     const out = { backend: tf.getBackend() }; let t0 = performance.now();

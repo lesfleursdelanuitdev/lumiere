@@ -119,6 +119,10 @@ try {
     await settled(); await page.click('[data-seg="section"][data-val="mask"]'); await settled(); await page.click('[data-act="add-piece-menu"]'); await page.click('#pop [data-act="add-piece"][data-val="subject"]');
     await page.waitForFunction(() => /Done in|failed|could not/i.test(document.querySelector("#toast").textContent), null, { timeout: 600000 });
     check(await page.evaluate(() => { const l = state.layers.find(x => x.id === state.activeId); return !!l.mask.pieces.at(-1).data; }), "Select Subject fills a mask");
+    // Memory budget: the subject model once kept every step's result until the end (about 750 MB of
+    // GPU memory) and iPhones closed the page. Its tensors must stay well below that.
+    const subjectPeak = await page.evaluate(async () => { const p = await tf.profile(async () => { await predictRect(0, 0, state.doc.w, state.doc.h); return tf.scalar(0); }); return Math.round(p.peakBytes / 1048576); });
+    check(subjectPeak < 150, `Select Subject stays within its GPU memory budget (${subjectPeak} MB of 150 MB)`);
 
     // Tap-to-select: an Object part, one tap on the flower (SAM 2). Very slow without a GPU.
     await settled(); await page.click('[data-act="add-piece-menu"]'); await page.click('#pop [data-act="add-piece"][data-val="object"]'); await settled();

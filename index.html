@@ -666,6 +666,7 @@ function ensureTF() {
   if (!tfPromise) { tfPromise = (async () => {
     if (!window.tf) await loadScript(TFJS_URL);
     try { tf.env().set("WEBGL_DELETE_TEXTURE_THRESHOLD", 0); } catch {}   // phones close pages that hold too much GPU memory
+    try { tf.env().set("WEBGL_CONV_IM2COL", false); } catch {}   // im2col builds a hidden scratch matrix of up to ~240 MB per convolution
     try { if (!(await tf.setBackend("webgl"))) throw 0; } catch { await tf.setBackend("cpu"); } await tf.ready(); })();
     tfPromise.catch(() => { tfPromise = null; }); }
   return tfPromise;
@@ -678,13 +679,29 @@ function ensureNet() {
     const bin = atob(model.weights), bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
     const w = f16ToF32(new Uint16Array(bytes.buffer)), sl = ([o, n]) => w.subarray(o, o + n);
     const convs = new Map(model.ops.filter(o => o.op === "Conv").map(o => [o, { W: tf.tensor4d(sl(o.w), o.wshape), B: tf.tensor1d(sl(o.b)) }]));
-    const runNet = x => tf.tidy(() => { const Tm = new Map([[0, x]]);
-      for (const o of model.ops) { let y; switch (o.op) {
-        case "Conv": { const c = convs.get(o); y = tf.add(tf.conv2d(Tm.get(o.inp), c.W, 1, "same", "NHWC", o.dil), c.B); break; }
-        case "Relu": y = tf.relu(Tm.get(o.inp)); break; case "MaxPool": y = tf.maxPool(Tm.get(o.inp), 2, 2, "same"); break;
-        case "Resize": y = tf.image.resizeBilinear(Tm.get(o.inp), o.size, false, true); break; case "Concat": y = tf.concat(o.inps.map(i => Tm.get(i)), 3); break;
-        case "Add": y = tf.add(Tm.get(o.inps[0]), Tm.get(o.inps[1])); break; case "Sigmoid": y = tf.sigmoid(Tm.get(o.inp)); break; } Tm.set(o.out, y); }
-      return Tm.get(model.output).reshape([320, 320]); });
+    // Each step's result is freed as soon as the last step that reads it has run. Keeping them all
+    // until the end needed about 750 MB of GPU memory, which made iOS close the page. The GPU runs
+    // behind JavaScript and only releases memory once it has caught up, so every few steps we wait
+    // for it; otherwise the whole queue (and everything it touches) is held at once.
+    const reads = o => o.inps || [o.inp], readers = new Map([[model.output, 1]]), SYNC_EVERY = 4;
+    for (const o of model.ops) for (const i of reads(o)) readers.set(i, (readers.get(i) || 0) + 1);
+    const step = (o, Tm) => { switch (o.op) {
+      case "Conv": { const c = convs.get(o); return tf.add(tf.conv2d(Tm.get(o.inp), c.W, 1, "same", "NHWC", o.dil), c.B); }
+      case "Relu": return tf.relu(Tm.get(o.inp)); case "MaxPool": return tf.maxPool(Tm.get(o.inp), 2, 2, "same");
+      case "Resize": return tf.image.resizeBilinear(Tm.get(o.inp), o.size, false, true); case "Concat": return tf.concat(o.inps.map(i => Tm.get(i)), 3);
+      case "Add": return tf.add(Tm.get(o.inps[0]), Tm.get(o.inps[1])); case "Sigmoid": return tf.sigmoid(Tm.get(o.inp)); } };
+    const runNet = async x => {   // x stays the caller's to dispose
+      const Tm = new Map([[0, x]]), left = new Map(readers), free = id => { if (id !== 0 && Tm.has(id)) { Tm.get(id).dispose(); Tm.delete(id); } };
+      for (const [k, o] of model.ops.entries()) {
+        Tm.set(o.out, tf.tidy(() => step(o, Tm)));
+        if (k % SYNC_EVERY === SYNC_EVERY - 1) { const probe = tf.tidy(() => Tm.get(o.out).slice([0, 0, 0, 0], [1, 1, 1, 1])); await probe.data(); probe.dispose(); }
+        if (!left.get(o.out)) free(o.out);   // a result nothing reads (the model's side outputs)
+        for (const i of reads(o)) { const n = left.get(i) - 1; left.set(i, n); if (n === 0) free(i); }
+      }
+      const out = tf.tidy(() => Tm.get(model.output).reshape([320, 320]));
+      for (const id of [...Tm.keys()]) free(id);
+      return out;
+    };
     return { runNet, mean: model.mean, std: model.std, backend: tf.getBackend() };
   })();
   netPromise.catch(() => { netPromise = null; }); return netPromise;
@@ -693,7 +710,7 @@ async function predictRect(sx, sy, sw, sh) {
   const net = await ensureNet(), c = document.createElement("canvas"); c.width = c.height = 320; const g = c.getContext("2d");
   g.drawImage(assets.get("base").img, sx, sy, sw, sh, 0, 0, 320, 320); const px = g.getImageData(0, 0, 320, 320).data, x = new Float32Array(320 * 320 * 3);
   for (let i = 0, j = 0; i < px.length; i += 4) for (let k = 0; k < 3; k++) x[j++] = (px[i + k] / 255 - net.mean[k]) / net.std[k];
-  const xt = tf.tensor4d(x, [1, 320, 320, 3]), yt = net.runNet(xt), p = await yt.data(); xt.dispose(); yt.dispose();
+  const xt = tf.tensor4d(x, [1, 320, 320, 3]), yt = await net.runNet(xt), p = await yt.data(); xt.dispose(); yt.dispose();
   let lo = Infinity, hi = -Infinity; for (const v of p) { if (v < lo) lo = v; if (v > hi) hi = v; }
   const out = new Float32Array(p.length); for (let i = 0; i < p.length; i++) out[i] = (p[i] - lo) / (hi - lo + 1e-8); return out;
 }
