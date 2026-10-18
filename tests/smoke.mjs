@@ -29,6 +29,7 @@ const order = page => page.evaluate(() => [...state.layers].reverse().map(l => l
 const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
 try {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 }, hasTouch: true });
+  page.setDefaultTimeout(90000);   // software rendering on a busy machine can take seconds per frame
   // Offline machines: TFJS_PATH=/path/to/tf.min.js serves TensorFlow.js locally instead of from jsDelivr.
   if (process.env.TFJS_PATH) await page.route("**/@tensorflow/tfjs@*/dist/tf.min.js", r => r.fulfill({ path: process.env.TFJS_PATH, contentType: "text/javascript" }));
   const errors = []; page.on("pageerror", e => errors.push(e.message));

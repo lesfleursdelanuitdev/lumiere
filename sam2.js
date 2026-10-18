@@ -56,17 +56,20 @@
 
   function model(man, W, D, f32, freeCache) {
     const linear = (x, k, w = W) => { const s = x.shape, y = tf.add(tf.matMul(x.reshape([-1, s[s.length - 1]]), w(k + ".w")), w(k + ".b")); return y.reshape([...s.slice(0, -1), y.shape[1]]); };
-    const layerNorm = (x, k, eps, w = W) => { const { mean, variance } = tf.moments(x, -1, true); return x.sub(mean).mul(tf.rsqrt(variance.add(eps))).mul(w(k + ".g")).add(w(k + ".b")); };
-    const gelu = x => x.mul(tf.erf(x.mul(Math.SQRT1_2)).add(1)).mul(0.5);   // exact GELU, as torch.nn.GELU
-    // softmax(q kᵀ / √d) v on [batch, n, d] tensors, in slices of queries so the score matrix stays small
+    // Memory: phones give a page little GPU memory, so every helper frees its temporary results
+    // as soon as it returns (each runs in its own small tf.tidy), and big steps run in slices.
+    const layerNorm = (x, k, eps, w = W) => tf.tidy(() => { const { mean, variance } = tf.moments(x, -1, true); return x.sub(mean).mul(tf.rsqrt(variance.add(eps))).mul(w(k + ".g")).add(w(k + ".b")); });
+    const gelu = x => tf.tidy(() => x.mul(tf.erf(x.mul(Math.SQRT1_2)).add(1)).mul(0.5));   // exact GELU, as torch.nn.GELU
+    // softmax(q kᵀ / √d) v on [batch, n, d] tensors, in slices of queries so the score matrix stays small (≤ 4 M values)
     function sdpa(q, k, v) {
-      const [B, Nq, d] = q.shape, Nk = k.shape[1], qs = q.mul(1 / Math.sqrt(d)), LIMIT = 1 << 24;
-      const step = Math.max(1, Math.floor(LIMIT / (B * Nk)));
-      if (step >= Nq) return tf.matMul(tf.softmax(tf.matMul(qs, k, false, true)), v);
-      const parts = []; for (let i = 0; i < Nq; i += step) { const n = Math.min(step, Nq - i);
-        parts.push(tf.tidy(() => tf.matMul(tf.softmax(tf.matMul(qs.slice([0, i, 0], [B, n, d]), k, false, true)), v))); }
-      return tf.concat(parts, 1);
+      const [B, Nq, d] = q.shape, Nk = k.shape[1], LIMIT = 1 << 22, step = Math.max(1, Math.floor(LIMIT / (B * Nk)));
+      const one = qq => tf.tidy(() => tf.matMul(tf.softmax(tf.matMul(qq.mul(1 / Math.sqrt(d)), k, false, true)), v));
+      if (step >= Nq) return one(q);
+      const parts = []; for (let i = 0; i < Nq; i += step) { const n = Math.min(step, Nq - i); parts.push(tf.tidy(() => one(q.slice([0, i, 0], [B, n, d])))); }
+      const out = tf.concat(parts, 1); parts.forEach(t => t.dispose()); return out;
     }
+    // Wait until the GPU has caught up: it releases freed memory only after running the queued work.
+    const gpuWait = async t => { const p = t.slice(t.shape.map(() => 0), t.shape.map(() => 1)); await p.data(); p.dispose(); };
 
     /* ── Hiera trunk: blocks laid out as in hieradet.py ── */
     const cfg = man.trunk, stageEnds = cfg.stages.map((_, i) => cfg.stages.slice(0, i + 1).reduce((a, b) => a + b) - 1);
@@ -96,34 +99,37 @@
       const o = sdpa(heads(q), heads(kk), heads(v)).reshape([B, b.heads, hq * wq, hd]).transpose([0, 2, 1, 3]).reshape([B, hq, wq, b.dimOut]);
       return linear(o, k + ".proj");
     }
-    // Phones have little GPU memory, so the big first stages run in slices of about TOKENS
-    // positions, each slice freeing its temporary results before the next one starts.
+    // The first stages see 65,536 positions, so they run in slices of about TOKENS positions,
+    // waiting for the GPU after each slice so freed memory is really released.
     const TOKENS = 8192;
-    function sliced(x, n, fn) {   // fn on slices of the first axis of x, results joined again
-      const N = x.shape[0]; if (N <= n) return fn(x);
-      const parts = []; for (let i = 0; i < N; i += n) { const m = Math.min(n, N - i); parts.push(tf.tidy(() => fn(x.slice([i, ...x.shape.slice(1).map(() => 0)], [m, ...x.shape.slice(1)])))); }
+    async function sliced(x, n, fn) {   // fn on slices of the first axis of x, results joined again
+      const N = x.shape[0], rest = x.shape.slice(1), parts = [];
+      for (let i = 0; i < N; i += n) { const m = Math.min(n, N - i);
+        const part = tf.tidy(() => fn(N <= n ? x : x.slice([i, ...rest.map(() => 0)], [m, ...rest]))); parts.push(part); await gpuWait(part); }
+      if (parts.length === 1) return parts[0];
       const out = tf.concat(parts); parts.forEach(t => t.dispose()); return out;
     }
-    function block(x, i) {
+    async function block(x, i) {   // x stays the caller's to dispose
       const b = blocks[i], k = "blk" + i, [, H, Wd] = x.shape;
-      const y = tf.tidy(() => {   // attention half
-        const xn = layerNorm(x, k + ".n1", 1e-6);
-        let shortcut = x;
-        if (b.dim !== b.dimOut) { shortcut = linear(xn, k + ".skip"); if (b.qStride) shortcut = tf.maxPool(shortcut, 2, 2, "valid"); }
-        let a, win = b.window, pad, H2 = H, W2 = Wd;
-        if (win > 0) { let h; [h, pad] = windowPartition(xn, win); a = sliced(h, Math.max(1, Math.floor(TOKENS / (win * win))), part => attention(part, k, b)); }
-        else a = attention(xn, k, b);
-        if (b.qStride) { win = b.window / 2; [, H2, W2] = shortcut.shape; pad = [Math.ceil(H2 / win) * win, Math.ceil(W2 / win) * win]; }
-        if (b.window > 0) a = windowUnpartition(a, win, pad, [H2, W2]);
-        return shortcut.add(a);
-      });
-      const [, H3, W3, C3] = y.shape;
-      const out = tf.tidy(() => {   // feed-forward half, in slices of positions
-        const fc1w = W(k + ".fc1.w"), fc1b = W(k + ".fc1.b"), fc2w = W(k + ".fc2.w"), fc2b = W(k + ".fc2.b"), g = W(k + ".n2.g"), bb = W(k + ".n2.b");
-        const ln2 = r => { const { mean, variance } = tf.moments(r, -1, true); return r.sub(mean).mul(tf.rsqrt(variance.add(1e-6))).mul(g).add(bb); };
-        return sliced(y.reshape([-1, C3]), TOKENS, r => r.add(tf.matMul(gelu(tf.matMul(ln2(r), fc1w).add(fc1b)), fc2w).add(fc2b))).reshape([1, H3, W3, C3]);
-      });
-      y.dispose(); return out;
+      // attention half
+      const xn = layerNorm(x, k + ".n1", 1e-6);
+      const shortcut = b.dim === b.dimOut ? x : tf.tidy(() => { const s = linear(xn, k + ".skip"); return b.qStride ? tf.maxPool(s, 2, 2, "valid") : s; });
+      let a;
+      if (b.window > 0) {
+        const h = tf.tidy(() => windowPartition(xn, b.window)[0]); xn.dispose();
+        const wa = await sliced(h, Math.max(1, Math.floor(TOKENS / (b.window * b.window))), part => attention(part, k, b)); h.dispose();
+        const win = b.qStride ? b.window / 2 : b.window, [, H2, W2] = shortcut.shape;
+        a = tf.tidy(() => windowUnpartition(wa, win, [Math.ceil(H2 / win) * win, Math.ceil(W2 / win) * win], [H2, W2])); wa.dispose();
+      } else { a = tf.tidy(() => attention(xn, k, b)); xn.dispose(); }
+      const y = shortcut.add(a); a.dispose(); if (shortcut !== x) shortcut.dispose();
+      await gpuWait(y);
+      // feed-forward half, in slices of positions
+      const [, H3, W3, C3] = y.shape, w = ["fc1.w", "fc1.b", "fc2.w", "fc2.b", "n2.g", "n2.b"].map(n => W(k + "." + n)), [fc1w, fc1b, fc2w, fc2b, g, bb] = w;
+      const flat = y.reshape([-1, C3]);
+      const ff = await sliced(flat, TOKENS, r => { const { mean, variance } = tf.moments(r, -1, true), n = r.sub(mean).mul(tf.rsqrt(variance.add(1e-6))).mul(g).add(bb);
+        return r.add(tf.matMul(gelu(tf.matMul(n, fc1w).add(fc1b)), fc2w).add(fc2b)); });
+      w.forEach(t => t.dispose()); flat.dispose(); y.dispose();
+      const out = ff.reshape([1, H3, W3, C3]); ff.dispose(); return out;
     }
     // Hiera's position embedding: the 7×7 background embedding resized bicubically (as torch's
     // F.interpolate, align_corners=False, A = −0.75) plus the 8×8 window embedding tiled.
@@ -157,22 +163,22 @@
       if (!pos) pos = posEmbed(SIZE / 4, SIZE / 4);
       let x = tf.tidy(() => tf.conv2d(tf.tensor4d(input, [1, SIZE, SIZE, 3]), W("patch.w"), 4, [[0, 0], [3, 3], [3, 3], [0, 0]]).add(W("patch.b"))
         .add(tf.tensor4d(pos, [1, SIZE / 4, SIZE / 4, cfg.embed_dim])));
-      const feats = [];
+      // The two high-resolution outputs (s0, s1) are made as soon as their stage ends, so the
+      // large stage results need not be kept; the two small ones are kept for the neck.
+      const feats = [], hi = [];
       for (let i = 0; i < blocks.length; i++) {
-        const y = tf.tidy(() => block(x, i));
-        if (!feats.includes(x)) x.dispose();   // stage outputs are kept for the neck
-        x = y; if (stageEnds.includes(i)) feats.push(x);
+        const y = await block(x, i);
+        if (!feats.includes(x)) x.dispose();
+        x = y; const s = stageEnds.indexOf(i);
+        if (s === 0 || s === 1) hi[s] = tf.tidy(() => linear(x, s ? "neck.s1" : "neck.s0"));
+        if (s >= 2 || (s >= 0 && opts.debug)) feats[s] = x;
         opts.progress?.((i + 1) / (blocks.length + 1));
-        const probe = x.slice([0, 0, 0, 0], [1, 1, 1, 1]); await probe.data(); probe.dispose();   // wait for the GPU, so work and memory do not pile up
-        await tf.nextFrame();
+        await gpuWait(x); await tf.nextFrame();
       }
-      const out = tf.tidy(() => {
-        const s0 = linear(feats[0], "neck.s0"), s1 = linear(feats[1], "neck.s1");
-        const top = tf.image.resizeNearestNeighbor(linear(feats[3], "neck.l3"), [EMB, EMB]);
-        const embed = linear(feats[2], "neck.l2").add(top).add(W("no_mem"));
-        return { s0, s1, embed };
-      });
-      if (opts.debug) out.trunk = feats; else feats.forEach(t => t.dispose());
+      if (!feats.includes(x)) x.dispose();
+      const embed = tf.tidy(() => linear(feats[2], "neck.l2").add(tf.image.resizeNearestNeighbor(linear(feats[3], "neck.l3"), [EMB, EMB])).add(W("no_mem")));
+      const out = { s0: hi[0], s1: hi[1], embed };
+      if (opts.debug) out.trunk = feats; else feats.forEach(t => t?.dispose());
       opts.progress?.(1);
       return out;
     }
@@ -207,29 +213,31 @@
 
     async function decode(f, prompts) {
       const pts = prompts.map(([x, y, l]) => [x * SIZE, y * SIZE, l]);
+      // Each layer runs in its own scope, so only the current tokens and image keys are kept.
+      const qpe = tf.tidy(() => tf.concat([D("dec.tokens"), sparse(pts)])), kpe = getDensePE();
+      let queries = qpe, keys = tf.tidy(() => f.embed.reshape([EMB * EMB, 256]).add(D("pe.no_mask")));
+      const next = (q, k) => { if (queries !== qpe && queries !== q) queries.dispose(); if (keys !== k) keys.dispose(); queries = q; keys = k; };
+      for (let i = 0; i < 2; i++) {
+        const k = "tw" + i;
+        next(...tf.tidy(() => {
+          let q = i === 0 ? attn(k + ".self", queries, queries, queries) : (() => { const a = queries.add(qpe); return queries.add(attn(k + ".self", a, a, queries)); })();
+          q = layerNorm(q, k + ".n1", 1e-5, D);
+          q = layerNorm(q.add(attn(k + ".t2i", q.add(qpe), keys.add(kpe), keys)), k + ".n2", 1e-5, D);
+          q = layerNorm(q.add(linear(tf.relu(linear(q, k + ".fc1", D)), k + ".fc2", D)), k + ".n3", 1e-5, D);
+          const kk = layerNorm(keys.add(attn(k + ".i2t", keys.add(kpe), q.add(qpe), q)), k + ".n4", 1e-5, D);
+          return [q, kk];
+        }));
+      }
+      next(tf.tidy(() => layerNorm(queries.add(attn("tw.final", queries.add(qpe), keys.add(kpe), keys)), "tw.nf", 1e-5, D)), keys);
+      // upscale ×4 with the high-resolution features, then one mask per mask token
+      const up1 = tf.tidy(() => gelu(layerNorm(tf.depthToSpace(linear(keys.reshape([1, EMB, EMB, 256]), "up1", D), 2).add(f.s1), "up.ln", 1e-6, D)));
+      const up2 = tf.tidy(() => gelu(tf.depthToSpace(linear(up1, "up2", D), 2).add(f.s0))); up1.dispose();
       const res = tf.tidy(() => {
-        const qpe = tf.concat([D("dec.tokens"), sparse(pts)]), kpe = getDensePE();
-        let queries = qpe, keys = f.embed.reshape([EMB * EMB, 256]).add(D("pe.no_mask"));
-        for (let i = 0; i < 2; i++) {
-          const k = "tw" + i;
-          if (i === 0) queries = attn(k + ".self", queries, queries, queries);
-          else { const q = queries.add(qpe); queries = queries.add(attn(k + ".self", q, q, queries)); }
-          queries = layerNorm(queries, k + ".n1", 1e-5, D);
-          queries = layerNorm(queries.add(attn(k + ".t2i", queries.add(qpe), keys.add(kpe), keys)), k + ".n2", 1e-5, D);
-          queries = layerNorm(queries.add(linear(tf.relu(linear(queries, k + ".fc1", D)), k + ".fc2", D)), k + ".n3", 1e-5, D);
-          keys = layerNorm(keys.add(attn(k + ".i2t", keys.add(kpe), queries.add(qpe), queries)), k + ".n4", 1e-5, D);
-        }
-        queries = layerNorm(queries.add(attn("tw.final", queries.add(qpe), keys.add(kpe), keys)), "tw.nf", 1e-5, D);
-        // upscale ×4 with the high-resolution features, then one mask per mask token
-        let up = tf.depthToSpace(linear(keys.reshape([1, EMB, EMB, 256]), "up1", D), 2).add(f.s1);
-        up = gelu(layerNorm(up, "up.ln", 1e-6, D));
-        up = gelu(tf.depthToSpace(linear(up, "up2", D), 2).add(f.s0));
         const tok = i => queries.slice([i, 0], [1, 256]);
         const hyper = tf.concat([0, 1, 2, 3].map(i => mlp(tok(2 + i), "hyper" + i, 3)));      // 4×32
-        const masks = tf.matMul(hyper, up.reshape([-1, 32]), false, true);                 // 4×65536
-        const iou = tf.sigmoid(mlp(tok(1), "iou", 3));
-        return [masks, iou];
+        return [tf.matMul(hyper, up2.reshape([-1, 32]), false, true), tf.sigmoid(mlp(tok(1), "iou", 3))];   // 4×65536 masks, 4 scores
       });
+      up2.dispose(); queries.dispose(); keys.dispose(); qpe.dispose();
       const [m, s] = await Promise.all(res.map(t => t.data())); res.forEach(t => t.dispose());
       return { all: m, scores: Array.from(s), size: 4 * EMB, ...choose(m, s, prompts) };
     }
