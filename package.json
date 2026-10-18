@@ -1,0 +1,14 @@
+{
+  "name": "lumiere",
+  "private": true,
+  "description": "Lumière by Les Fleurs de la Nuit: a mobile-first photographic lighting editor",
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "test": "node tests/smoke.mjs",
+    "test:selection": "node tests/smoke.mjs --selection"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1"
+  }
+}
