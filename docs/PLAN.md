@@ -106,20 +106,20 @@ Why not PhotoCraft: its filters run on one CPU core in the browser; radial blur 
 
 1. **Fix the iPhone black screen** (Select Subject uses too much GPU memory): see
    [bug-ios-black-screen.md](bug-ios-black-screen.md).
-1b. **Test on real phones.** A recent iPhone, an older iPhone and two Android phones: frame rate
+2. **Test on real phones.** A recent iPhone, an older iPhone and two Android phones: frame rate
    while dragging (the app shows it), selection time, memory with large photos.
-2. **Selection quality on your own photographs.** Fine petals, translucent petals, busy
+3. **Selection quality on your own photographs.** Fine petals, translucent petals, busy
    backgrounds. If U²-Net-p is not good enough, try a larger model (for example BiRefNet, MIT
    license) with a WebGPU path, and tap-to-select (point prompts) for Object.
    See [ai-models.md](ai-models.md) for the candidate models, licenses and evaluation plan.
-3. **Installable app and offline use:** web app manifest, service worker, IndexedDB autosave so a
+4. **Installable app and offline use:** web app manifest, service worker, IndexedDB autosave so a
    project survives a reload or a closed tab.
-4. **Large photos:** tiled export above about 16.7 megapixels; 16-bit render targets where the
+5. **Large photos:** tiled export above about 16.7 megapixels; 16-bit render targets where the
    GPU supports them, to avoid banding in smooth gradients.
-5. **Code structure:** split `index.html` into modules (renderer, document model, masks,
+6. **Code structure:** split `index.html` into modules (renderer, document model, masks,
    selection, UI) with unit tests for the mask maths and the project format, before it grows further.
-6. **Recipes:** save and share your own presets.
-7. **Native apps:** keep the project format as the shared contract; reimplement the renderer's
+7. **Recipes:** save and share your own presets.
+8. **Native apps:** keep the project format as the shared contract; reimplement the renderer's
    few shaders in Metal (iOS) and Vulkan or GLES (Android), and compare against the web renderer
    with visual regression tests.
 
