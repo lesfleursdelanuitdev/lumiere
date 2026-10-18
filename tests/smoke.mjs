@@ -115,6 +115,7 @@ try {
   await page.click("#undo"); check(await page.evaluate(() => state.layers.length === 3), "undo works");
 
   if (process.argv.includes("--selection")) {
+    page.setDefaultTimeout(120000);   // software rendering: frames can take seconds while models run
     await settled(); await page.click('[data-seg="section"][data-val="mask"]'); await settled(); await page.click('[data-act="add-piece-menu"]'); await page.click('#pop [data-act="add-piece"][data-val="subject"]');
     await page.waitForFunction(() => /Done in|failed|could not/i.test(document.querySelector("#toast").textContent), null, { timeout: 600000 });
     check(await page.evaluate(() => { const l = state.layers.find(x => x.id === state.activeId); return !!l.mask.pieces.at(-1).data; }), "Select Subject fills a mask");
