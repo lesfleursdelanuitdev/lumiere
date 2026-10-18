@@ -1,6 +1,6 @@
 # Bug: the whole page goes black on iPhone during Select Subject
 
-Status: **fix 1 done, waiting for a retest on the iPhone**. Diagnosed from measurements; not
+Status: **fixes 1 and 2 done, waiting for a retest on the iPhone**. Diagnosed from measurements; not
 yet reproduced on an iPhone.
 
 ## Report
@@ -114,7 +114,7 @@ In order of priority. Each has a check that proves it worked.
   needs to keep for its later steps. The selection test now fails if the peak goes above
   150 MB.
 
-### 2. Lower tap-to-select's peak (high)
+### 2. Lower tap-to-select's peak (high) · done
 
 - **Where:** `sam2.js`.
 - **Change:**
@@ -124,6 +124,35 @@ In order of priority. Each has a check that proves it worked.
   - Measure the decoder on its own.
 - **Expected:** encoder peak under about 150 MB, a little slower.
 - **Check:** `tf.profile` peaks; `tools/check_sam2.mjs` still matches PyTorch.
+- **Result:** the plan above was not enough on its own. A step-by-step memory trace showed
+  where the peaks were, and each one was fixed:
+  1. **Everything kept until the end of a step:** each encoder block and the whole decoder ran
+     in one `tf.tidy`, so all temporary results lived until the end. Blocks now free each
+     result as soon as the next one exists, and the decoder runs layer by layer.
+  2. **Slices sized by position count:** the last stages have far wider positions, so one
+     slice could hold 45 MB. Slices are now sized by memory: about 2 million values (8 MB) per
+     temporary result, in every stage.
+  3. **Wide intermediates:** q, k and v were computed as one combined result and then split
+     (three extra copies); now three products, each freed once rearranged into heads.
+     Attention scores are computed in slices of at most 2 million values (was 16.7 million).
+     The shortcut that widens channels is computed in bands of rows.
+  4. **The GPU running behind:** each slice now waits for the GPU, as in fix 1.
+
+  | Measurement | Before | After |
+  |---|---|---|
+  | Reading the photo, tensor peak (`tf.profile`) | 562 MB | 160 MB |
+  | One tap, tensor peak | 429 MB | 127 MB |
+  | Graphics process while reading the photo, above idle | ~930 MB | ~600 MB |
+  | Masks vs PyTorch (`tools/check_sam2.mjs`) | 99.96–100% | 99.96–100% |
+  | Reading the photo, software GPU | 100–110 s | 115–130 s |
+
+  The graphics-process number improved much less than the tensor peak. That process here is
+  a software GPU (SwiftShader) that compiles each of the encoder's ~740 GPU programs into CPU
+  code, and that memory seems to grow with the work done rather than with the data. A real
+  GPU does not do this, so the tensor peak is the better guide to what an iPhone needs.
+  Also: measuring with `tf.profile` itself inflates the graphics process (about 2 GB instead
+  of 0.9 GB), so process numbers above were measured without it. The selection test now fails
+  if reading the photo or a tap goes above 200 MB.
 
 ### 3. Work from a reduced copy of large photos (high)
 
