@@ -1,6 +1,7 @@
 # Bug: the whole page goes black on iPhone during Select Subject
 
-Status: **open**. Diagnosed from measurements; not yet reproduced on an iPhone.
+Status: **fix 1 done, waiting for a retest on the iPhone**. Diagnosed from measurements; not
+yet reproduced on an iPhone.
 
 ## Report
 
@@ -81,7 +82,7 @@ photo matters more than measured, and fix 3 moves up.
 
 In order of priority. Each has a check that proves it worked.
 
-### 1. Free the subject model's results as soon as they are used (critical)
+### 1. Free the subject model's results as soon as they are used (critical) · done
 
 - **Where:** `ensureNet` → `runNet` in `index.html`.
 - **Change:** before running, count how many later steps read each output. After each step,
@@ -90,6 +91,28 @@ In order of priority. Each has a check that proves it worked.
 - **Expected:** peak GPU memory from 746 MB to well under 100 MB, with identical results.
 - **Check:** `tf.profile` peak below 100 MB; Select Subject masks identical to before on the
   sample photo; the friend's photo no longer crashes.
+- **Result:** fixing the model alone was not enough. Two more things were holding memory:
+  1. **The GPU runs behind JavaScript.** A freed result is only released once the GPU has
+     finished the queued steps that use it. JavaScript queued all 490 steps almost at once, so
+     nearly everything was still held. `runNet` now waits for the GPU every 4 steps. Waiting
+     after every step saved a little more memory but would cost about a second per selection
+     on a phone.
+  2. **Hidden scratch memory in convolutions.** TensorFlow.js computes a convolution through an
+     intermediate matrix ("im2col") that does not appear in its own memory count. For this
+     model's first stage that matrix is about 240 MB. It is now turned off
+     (`WEBGL_CONV_IM2COL = false`) in favour of direct convolution.
+
+  | Measurement | Before | After |
+  |---|---|---|
+  | Subject model's tensors, peak (`tf.profile`) | 746 MB | 114 MB |
+  | Graphics process, sample photo, peak above idle | ~1,050 MB | ~270 MB |
+  | Graphics process, 45.7 MP photo, peak | 1,722 MB | 549 MB |
+  | Subject mask vs before | | max difference 0.00006 (0–1 scale) |
+  | Tap-to-select vs PyTorch (same setting) | 99.96–100% | 99.96–100% |
+
+  114 MB is above the 100 MB target. What is left is mostly results the model genuinely
+  needs to keep for its later steps. The selection test now fails if the peak goes above
+  150 MB.
 
 ### 2. Lower tap-to-select's peak (high)
 
@@ -151,7 +174,7 @@ In order of priority. Each has a check that proves it worked.
 
 - The friend's iPhone 17 Pro runs Select Subject, a preset and tap-to-select with her Nikon Z7
   photo and with an iPhone photo, twice in a row, without the page going black.
-- Peaks measured by the tests: Select Subject < 100 MB, tap-to-select < 150 MB.
+- Peaks measured by the tests: Select Subject < 150 MB (now 114 MB), tap-to-select < 150 MB.
 - Masks unchanged: Select Subject identical on the sample; tap-to-select still matches PyTorch.
 - Also checked on an older iPhone and a mid-range Android phone.
 
