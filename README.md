@@ -17,7 +17,7 @@ selection with a small on-device AI model. Nothing is uploaded.
 |---|---|
 | Light | Radial gradient (an ellipse you draw, stretch and rotate; color temperature swatches) or a light image (built-in Window, Bokeh, Light leak, Sun flare, or your own) |
 | Blurs | Any number of radial (zoom or spin) and Gaussian blurs, applied in order to this light only. The radial blur center can sit outside the photo. |
-| Mask | Lightroom-style parts: Subject, Object, Brush, Radial gradient, Linear gradient. The first part is the base; each later part adds, subtracts or intersects. Parts can be inverted. The whole mask has Density, Feather and Invert. |
+| Mask | Lightroom-style parts: Subject, Object (tap the object, or drag a box), Brush, Radial gradient, Linear gradient. The first part is the base; each later part adds, subtracts or intersects. Parts can be inverted. The whole mask has Density, Feather and Invert. |
 | Blend mode | Screen, Overlay, Lighten, Color Dodge |
 | Opacity | 0–100% |
 
@@ -55,9 +55,9 @@ Then open <http://localhost:8080>. To try it on a phone, open the same address f
 using your computer's local IP address, or host the folder on any static host.
 
 The app loads TensorFlow.js from jsDelivr, its fonts from Google Fonts, and its styles from
-`design-system/styles.css`. The selection model
-(`models/u2netp.json`, about 3 MB) is downloaded the first time someone uses Select Subject,
-Select Object or a preset.
+`design-system/styles.css`. The selection models are downloaded only when first used:
+`models/u2netp.json` (about 3 MB) for Subject and presets, and `models/sam2-tiny/` (62 MB) for
+tap-to-select on Object parts. Both run on the device; photos are never uploaded.
 
 ## Test
 
@@ -65,8 +65,13 @@ Select Object or a preset.
 npm install
 npx playwright install chromium
 npm test                    # start screen, opening a photo, reordering (mouse and touch), editor and its menus, 44 px targets, drawing, undo
-npm run test:selection      # also runs AI subject selection (slow without a GPU)
+npm run test:selection      # also runs Select Subject and tap-to-select (very slow without a GPU)
 ```
+
+Without internet access, set `TFJS_PATH` to a local `tf.min.js` (TensorFlow.js 4.22.0) for the
+selection test. To check the SAM 2 port against PyTorch after changing `sam2.js`, write reference
+outputs with `tools/convert_sam2.py --reference photo.jpg --ref-out REF` and run
+`node tools/check_sam2.mjs REF`.
 
 ## Repository layout
 
@@ -75,6 +80,10 @@ npm run test:selection      # also runs AI subject selection (slow without a GPU
 | `index.html` | The whole app: UI, WebGL2 renderer, mask compositing, selection, presets |
 | `models/u2netp.json` | U²-Net-p salient-object model, converted for TensorFlow.js (float16 weights) |
 | `tools/convert_u2netp.py` | Rebuilds `models/u2netp.json` from the ONNX model |
+| `sam2.js` | SAM 2.1 Tiny (tap-to-select) in TensorFlow.js: image encoder, prompt encoder, mask decoder |
+| `models/sam2-tiny/` | Its weights (float16, six 10 MB files and a manifest) |
+| `tools/convert_sam2.py` | Rebuilds `models/sam2-tiny/` from Meta's checkpoint; can write PyTorch reference outputs |
+| `tools/check_sam2.mjs` | Compares `sam2.js` with those reference outputs in a headless browser |
 | `tests/smoke.mjs` | Headless browser smoke test |
 | `design-system/` | The "Darkroom" design system: tokens (`styles.css`), living style guide with Dev Mode and Copy-as-prompt (`index.html`), concept screens, icon sprite |
 | `docs/PLAN.md` | Product and design plan: the layer model, interface and roadmap |

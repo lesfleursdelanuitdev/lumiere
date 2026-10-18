@@ -5,8 +5,33 @@ changing what makes it work: **the AI decides what and where; Lumière's rendere
 Models produce masks, depth maps or suggested layer settings. The light itself is always an
 ordinary, editable layer drawn by the WebGL2 renderer, never a regenerated photograph.
 
-Status: exploration. Nothing here is built yet. Facts marked *(verify)* need checking against
-the current model cards and library docs before any work starts.
+Status: **tap-to-select with SAM 2.1 Tiny is built** (see below). The rest is exploration;
+facts marked *(verify)* need checking against the current model cards and library docs.
+
+## Built: tap-to-select (SAM 2.1 Tiny)
+
+- **What:** the Object mask part. Tap the object to select it; tap more places to add to it;
+  switch to Remove and tap what to leave out; or drag a box. Undo works per tap.
+- **How it runs:** `sam2.js`, a TensorFlow.js (WebGL) port of Meta's image encoder, prompt
+  encoder and mask decoder, so Lumière keeps a single AI runtime. Transformers.js and ONNX
+  Runtime were not used. The image encoder runs once per photo; each tap runs only the small
+  decoder. The encoder works in slices of about 8,000 positions and waits for the GPU between
+  blocks, to fit in a phone's GPU memory.
+- **Weights:** `models/sam2-tiny/`, 62 MB as float16, downloaded on first use and cached by the
+  browser. Converted by `tools/convert_sam2.py` from the official SAM 2.1 Hiera Tiny checkpoint
+  (Apache-2.0).
+- **Accuracy of the port:** checked against PyTorch with `tools/check_sam2.mjs` on a test photo.
+  Image features differ by at most 0.0003; the masks for one tap, a tap plus an exclusion, a box,
+  and a box plus a tap agree with PyTorch's at 99.96–100%.
+- **Smaller weights (not used):** int8 storage (37 MB) kept confident masks (99.9% agreement)
+  but changed uncertain ones (a box, or several taps) by up to 13%, so float16 is the default.
+  `--int8` remains in the converter if download size matters more later.
+- **Speed:** without a GPU (software WebGL in the test machine) reading a photo takes about
+  2 minutes and a tap 2–4 seconds. On a phone GPU it should be seconds and well under a second;
+  **this still needs measuring on real phones** (step one of the evaluation plan below).
+- **Fallback:** if the model cannot load, a box uses U²-Net-p as before.
+- **Mask quality:** the 256×256 mask logits are resized to the mask grid and snapped to edges
+  in the photo with the same guided filter as Select Subject.
 
 ## Where Lumière is today
 
@@ -123,7 +148,7 @@ and print the table.
 
 | Stage | Work | Depends on |
 |---|---|---|
-| 1 | Evaluation set and harness; SAM-family tap-to-select prototype | Your photographs and reference masks |
+| 1 | Evaluation set and harness; ~~SAM-family tap-to-select prototype~~ (built); speed and memory on real phones | Your photographs and reference masks |
 | 2 | Depth range mask part; depth-aware presets | Stage 1 harness |
 | 3 | Edge refinement (BiRefNet) where the evaluation shows a need | Stage 1 results |
 | 4 | Rule-based light suggestions | Stages 1–2 |

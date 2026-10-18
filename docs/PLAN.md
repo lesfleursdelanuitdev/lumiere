@@ -27,6 +27,9 @@ Five kinds: **Subject**, **Object**, **Brush**, **Radial gradient**, **Linear gr
 - Typical use: *Subject, inverted* keeps a light off the flower so it sits behind it. A Brush
   part set to Subtract then carves out a detail by hand.
 - The mask decides where the light shows: clear means the light shows; masked means it is held back.
+- **Object** is tap-to-select (SAM 2.1 Tiny): tap the object; tap more places to add to it, or
+  switch to Remove and tap what to leave out; or drag a box. The photo is read once (seconds on a
+  phone GPU), then each tap takes a moment. If the model cannot run, a box falls back to U²-Net-p.
 
 ## 2. Interface (phone first)
 

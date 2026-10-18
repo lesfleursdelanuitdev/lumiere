@@ -246,6 +246,7 @@ const SWATCHES = [["1900K", "#ff8400"], ["2700K", "#ffa757"], ["3200K", "#ffb87b
 const PREVIEW_LONG = 1600, MASK_LONG = 1024, THUMB = 104;
 const TFJS_URL = "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js";
 const MODEL_URL = "models/u2netp.json"; // U²-Net-p salient object model (Apache-2.0), published next to this page
+const SAM_JS = "sam2.js", SAM_URL = "models/sam2-tiny/", SAM_MB = 62; // SAM 2.1 Hiera Tiny (Meta, Apache-2.0): tap-to-select for Object
 const PIECES = { subject: "Subject", object: "Object", brush: "Brush", radial: "Radial gradient", linear: "Linear gradient" };
 
 /* ═════════════════════════ state ═════════════════════════ */
@@ -257,7 +258,7 @@ const state = {
   section: "light",      // light | blurs | mask (inside the editor)
   focus: null,           // id of the blur or mask piece being edited
   drawing: null,         // { kind: "light" } or { kind: "piece", id }: the next drag draws that shape
-  solo: false, showMask: true, fine: false, tall: false,
+  solo: false, showMask: true, fine: false, tall: false, objMode: "add",
   brush: { size: 0.05, hard: 0.5, flow: 0.7, erase: false },
   view: { zoom: 1, x: 0, y: 0 }, interacting: false,
 };
@@ -577,6 +578,15 @@ function drawOverlay() {
     og.strokeStyle = "rgba(255,255,255,.85)"; og.beginPath(); og.arc(cursor[0], cursor[1], r, 0, Math.PI * 2); og.stroke();
     if (state.brush.hard < 0.95) { og.setLineDash([3, 4]); og.beginPath(); og.arc(cursor[0], cursor[1], r * state.brush.hard, 0, Math.PI * 2); og.stroke(); og.setLineDash([]); }
   }
+  if (state.section === "mask" && f?.type === "object") {
+    if (f.box && !boxDraft) { const [x0, y0] = toScreen(f.box[0], f.box[1]), [x1, y1] = toScreen(f.box[2], f.box[3]); og.setLineDash([6, 5]); og.strokeStyle = "rgba(250,101,61,.8)"; og.lineWidth = 1.5; og.strokeRect(x0, y0, x1 - x0, y1 - y0); og.setLineDash([]); }
+    for (const [u, v, lab] of f.points || []) {   // include points in the design system's success green, exclude points in its error pink
+      const [x, y] = toScreen(u, v); og.setLineDash([]);
+      og.fillStyle = "rgba(0,0,0,.55)"; og.beginPath(); og.arc(x, y, 10, 0, Math.PI * 2); og.fill();
+      og.fillStyle = lab ? "#56D089" : "#F45A82"; og.beginPath(); og.arc(x, y, 8, 0, Math.PI * 2); og.fill();
+      og.strokeStyle = "#190F0B"; og.lineWidth = 2; og.beginPath(); og.moveTo(x - 4, y); og.lineTo(x + 4, y); if (lab) { og.moveTo(x, y - 4); og.lineTo(x, y + 4); } og.stroke();
+    }
+  }
   if (boxDraft) { const [x0, y0, x1, y1] = boxDraft; og.fillStyle = "rgba(250,101,61,.08)"; og.fillRect(Math.min(x0, x1), Math.min(y0, y1), Math.abs(x1 - x0), Math.abs(y1 - y0));
     og.setLineDash([6, 5]); og.strokeStyle = accent; og.lineWidth = 1.5; og.strokeRect(Math.min(x0, x1), Math.min(y0, y1), Math.abs(x1 - x0), Math.abs(y1 - y0)); og.setLineDash([]); }
 }
@@ -651,12 +661,19 @@ async function assetFromFile(file) {
 let netPromise = null, busy = false;
 function loadScript(src) { return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("The selection engine could not be loaded.")); document.head.appendChild(s); }); }
 function f16ToF32(u16) { const out = new Float32Array(u16.length); for (let i = 0; i < u16.length; i++) { const h = u16[i], s = h & 0x8000 ? -1 : 1, e = (h >> 10) & 31, f = h & 1023; out[i] = e === 0 ? s * f * 5.960464477539063e-8 : e === 31 ? (f ? NaN : s * Infinity) : s * Math.pow(2, e - 15) * (1 + f / 1024); } return out; }
+let tfPromise = null;
+function ensureTF() {
+  if (!tfPromise) { tfPromise = (async () => {
+    if (!window.tf) await loadScript(TFJS_URL);
+    try { tf.env().set("WEBGL_DELETE_TEXTURE_THRESHOLD", 0); } catch {}   // phones close pages that hold too much GPU memory
+    try { if (!(await tf.setBackend("webgl"))) throw 0; } catch { await tf.setBackend("cpu"); } await tf.ready(); })();
+    tfPromise.catch(() => { tfPromise = null; }); }
+  return tfPromise;
+}
 function ensureNet() {
   if (netPromise) return netPromise;
   netPromise = (async () => {
-    if (!window.tf) await loadScript(TFJS_URL);
-    try { tf.env().set("WEBGL_DELETE_TEXTURE_THRESHOLD", 0); } catch {}   // phones close pages that hold too much GPU memory
-    try { if (!(await tf.setBackend("webgl"))) throw 0; } catch { await tf.setBackend("cpu"); } await tf.ready();
+    await ensureTF();
     const res = await fetch(MODEL_URL); if (!res.ok) throw new Error("The selection model could not be downloaded."); const model = await res.json();
     const bin = atob(model.weights), bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
     const w = f16ToF32(new Uint16Array(bytes.buffer)), sl = ([o, n]) => w.subarray(o, o + n);
@@ -728,6 +745,55 @@ async function withBusy(msg, fn) {
   try { const r = await fn(); const net = await ensureNet(); toast(`Done in ${((performance.now() - t0) / 1000).toFixed(1)} s${net.backend !== "webgl" ? " (slow mode: no GPU for selection)" : ""}.`); return r; }
   catch (err) { console.error(err); toast(err.message || "Selection failed.", 4000); }
   finally { busy = false; renderPanel(); markDirty(); }
+}
+
+/* ── tap-to-select (Object): SAM 2.1 Tiny, loaded the first time an Object part is used ──
+   The photo is read once (the slow part, cached per photo); each tap or box then takes a moment. */
+let samPromise = null, samFeat = null, samBusy = false, samQueued = null;
+function ensureSam() {
+  if (!samPromise) { samPromise = (async () => {
+    await ensureTF(); if (!window.LumiereSAM2) await loadScript(SAM_JS);
+    return LumiereSAM2.load(SAM_URL, f => toast(`Downloading the object model: ${Math.round(f * 100)}% of ${SAM_MB} MB (first time only)…`, 120000)); })();
+    samPromise.catch(() => { samPromise = null; }); }
+  return samPromise;
+}
+function samFeatures() {
+  const base = assets.get("base");
+  if (samFeat?.img !== base.img) {
+    const old = samFeat; old?.promise.then(f => samPromise?.then(m => m.release(f))).catch(() => {});
+    const promise = (async () => { const sam = await ensureSam();
+      return sam.encode(base.img, { progress: f => toast(`Reading the photo for object selection… ${Math.round(f * 100)}%`, 120000) }); })();
+    samFeat = { img: base.img, promise }; promise.catch(() => { if (samFeat?.promise === promise) samFeat = null; });
+  }
+  return samFeat.promise;
+}
+const samPrompts = p => [...(p.box ? [[p.box[0], p.box[1], 2], [p.box[2], p.box[3], 3]] : []), ...(p.points || [])];
+async function selectObject(p) {
+  if (samBusy) { samQueued = p; return; }
+  samBusy = true; renderPanel(); const t0 = performance.now(), first = !samFeat;
+  try {
+    const prompts = samPrompts(p); if (!prompts.length) { p.data = null; commit(); return; }
+    const feats = await samFeatures(), sam = await ensureSam(), r = await sam.decode(feats, samPrompts(p));
+    p.data = samCoverage(r.logits, r.size); commit();
+    const secs = (performance.now() - t0) / 1000;
+    if (first || secs > 1.5) toast(`Selected in ${secs.toFixed(1)} s. Tap to add more, or switch to Remove.${tf.getBackend() !== "webgl" ? " (Slow mode: no GPU.)" : ""}`, 3200); else document.querySelector("#toast").hidden = true;
+  } catch (err) {
+    console.error(err);
+    if (p.box && !p.points?.length) { toast("Tap-to-select is not available here; using the box instead.", 3000); samBusy = false; await withBusy("Finding the object…", async () => { p.data = await objectCoverage(p.box); commit(); }); }
+    else toast((err.message || "Object selection failed.") + " Drag a box around the object instead.", 5000);
+  } finally {
+    samBusy = false; renderPanel(); markDirty();
+    if (samQueued) { const q = samQueued; samQueued = null; selectObject(q); }
+  }
+}
+function samCoverage(logits, n) {   // 256×256 mask logits → coverage on the mask grid, snapped to the photo's edges
+  const { mw, mh } = state.doc, sel = new Float32Array(mw * mh), tap = (i, N) => { const v = Math.max(0, (i + 0.5) * n / N - 0.5), a = Math.min(n - 1, Math.floor(v)); return [a, Math.min(n - 1, a + 1), v - a]; };
+  const xs = Array.from({ length: mw }, (_, x) => tap(x, mw));
+  for (let y = 0; y < mh; y++) { const [y0, y1, fy] = tap(y, mh);
+    for (let x = 0; x < mw; x++) { const [x0, x1, fx] = xs[x];
+      const v = (logits[y0 * n + x0] * (1 - fx) + logits[y0 * n + x1] * fx) * (1 - fy) + (logits[y1 * n + x0] * (1 - fx) + logits[y1 * n + x1] * fx) * fy;
+      sel[y * mw + x] = 1 / (1 + Math.exp(-v)); } }
+  return guidedFilter(guideGray(), sel, mw, mh, Math.max(2, Math.round(Math.max(mw, mh) / 170)), 4e-4);
 }
 function subjectStats(cov) {
   const { mw, mh } = state.doc; let n = 0, sx = 0, sy = 0, x0 = mw, y0 = mh, x1 = 0, y1 = 0;
@@ -804,7 +870,7 @@ function startSingle(x, y, e) {
     if (state.drawing?.kind === "light" && state.section === "light" && l.light.type === "radial") { g = { type: "draw-ellipse", o: l.light, start: [x, y] }; beginInteract(); return; }
     if (state.section === "mask" && f) {
       if (f.type === "brush") { f.data = f.data ? f.data.slice() : zeros(); lastPaint = null; cursor = [x, y]; g = { type: "paint", p: f }; beginInteract(); peek(`Brush · <b>${state.brush.erase ? "erase" : "paint"}</b>`); paintAt(f, x, y); return; }
-      if (f.type === "object") { boxDraft = [x, y, x, y]; g = { type: "box", p: f }; markDirty(); return; }
+      if (f.type === "object") { boxDraft = null; g = { type: "obj", p: f, start: [x, y] }; return; }   // a tap adds a point; a drag draws a box
       if (state.drawing?.id === f.id && f.type === "radial") { g = { type: "draw-ellipse", o: f, start: [x, y] }; beginInteract(); return; }
       if (state.drawing?.id === f.id && f.type === "linear") { const [u, v] = toDoc(x, y); Object.assign(f, { x0: u, y0: v, x1: u, y1: v }); g = { type: "draw-line", o: f }; beginInteract(); return; }
     }
@@ -820,7 +886,7 @@ function startSingle(x, y, e) {
 function moveSingle(x, y) {
   const L = Lpx(), z = state.view.zoom;
   if (g.type === "paint") { cursor = [x, y]; paintAt(g.p, x, y); return; }
-  if (g.type === "box") { boxDraft[2] = x; boxDraft[3] = y; markDirty(); return; }
+  if (g.type === "obj") { if (!boxDraft && Math.hypot(x - g.start[0], y - g.start[1]) > 10) boxDraft = [...g.start, x, y]; if (boxDraft) { boxDraft[2] = x; boxDraft[3] = y; markDirty(); } return; }
   if (g.type === "pan") { state.view = { ...g.v0, x: g.v0.x + x - g.start[0], y: g.v0.y + y - g.start[1] }; markDirty(); return; }
   if (g.type === "draw-ellipse") { const [u, v] = toDoc(...g.start), r = Math.max(0.01, Math.hypot(x - g.start[0], y - g.start[1]) / (L * z)); Object.assign(g.o, { x: u, y: v, rx: r, ry: r, angle: 0 }); peek(`Drawing · size <b>${Math.round(r * 100)}%</b>`); markDirty(); return; }
   if (g.type === "draw-line") { const [u, v] = toDoc(x, y); g.o.x1 = u; g.o.y1 = v; peek("Drawing linear gradient"); markDirty(); return; }
@@ -830,18 +896,23 @@ function moveSingle(x, y) {
     const [u, v] = g.hs[0].get(); peek(`${g.label} · ${fmtXY(u, v)}`); markDirty();
   }
 }
-function cancelSingle() { if (g?.type === "box") { boxDraft = null; g = null; markDirty(); return; } endSingle(); }
+function cancelSingle() { if (g?.type === "obj") { boxDraft = null; g = null; markDirty(); return; } endSingle(); }
 function endSingle() {
   if (!g) return; const t = g.type, gp = g; g = null; peek(null);
   if (t === "paint") { lastPaint = null; if (!matchMedia("(pointer:fine)").matches) cursor = null; commit(); }
   if (t === "move") commit();
   if (t === "draw-ellipse" || t === "draw-line") { state.drawing = null; commit(); renderPanel(); }
-  if (t === "box") {
-    const [x0, y0, x1, y1] = boxDraft; boxDraft = null; markDirty();
-    if (Math.abs(x1 - x0) < 14 || Math.abs(y1 - y0) < 14) { toast("Drag a box around the object."); return; }
-    const a = toDoc(x0, y0), b = toDoc(x1, y1), p = gp.p;
-    withBusy("Finding the object…", async () => { const d = await objectCoverage([a[0], a[1], b[0], b[1]]); p.data = d; p.box = [a[0], a[1], b[0], b[1]]; commit(); });
-    return;
+  if (t === "obj") {   // Object part: a tap adds a point (include or exclude), a drag sets the box
+    const p = gp.p;
+    if (boxDraft) {
+      const [x0, y0, x1, y1] = boxDraft; boxDraft = null; markDirty();
+      if (Math.abs(x1 - x0) < 14 || Math.abs(y1 - y0) < 14) return;
+      const a = toDoc(x0, y0), b = toDoc(x1, y1); p.box = [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[0], b[0]), Math.max(a[1], b[1])].map(v => clamp(v, 0, 1)); p.points = [];
+    } else {
+      const [u, v] = toDoc(...gp.start); if (u < 0 || v < 0 || u > 1 || v > 1) { toast("Tap inside the photo."); return; }
+      p.points = [...(p.points || []), [u, v, state.objMode === "remove" ? 0 : 1]];
+    }
+    markDirty(); selectObject(p); return;
   }
   endInteract(t === "pan" ? 60 : 0); renderReadoutsOnly();
 }
@@ -971,7 +1042,10 @@ function maskSection(l) {
       if (p.type === "brush") body += toggles("brush-mode", [["paint", "Paint", "brush"], ["erase", "Erase", "minus"]], state.brush.erase ? "erase" : "paint", "Brush mode") + slider("bsize", l) + `<div class="grid-2">${slider("bhard", l)}${slider("bflow", l)}</div><p class="t-caption">One finger paints. The dashed inner circle shows where the brush is at full strength.</p>`;
       if (p.type === "radial") body += slider("pfeather", l, p) + redraw + `<p class="t-caption">Drag the center to move it; the side handles stretch and rotate.</p>`;
       if (p.type === "linear") body += redraw + `<p class="t-caption">Full strength before the solid line, fading to nothing at the dashed line. Drag either point to adjust.</p>`;
-      if (p.type === "object") body += `<p class="t-caption">${p.data ? "Drag a new box on the photo to select a different object." : "Drag a box around the object on the photo."}</p>`;
+      if (p.type === "object") { const n = (p.points || []).length;
+        body += toggles("obj-mode", [["add", "Add", "plus"], ["remove", "Remove", "minus"]], state.objMode, "What a tap on the photo does") +
+          `<p class="t-caption">${samBusy ? "Selecting…" : n || p.box ? (state.objMode === "remove" ? "Tap what to leave out." : "Tap to add more of the object, or switch to Remove.") + " A new box starts over." : "Tap the object on the photo, or drag a box around it."}</p>` +
+          (n || p.box ? `<div class="row"><span class="t-mono">${n ? n + (n === 1 ? " tap" : " taps") : ""}${n && p.box ? " · " : ""}${p.box ? "box" : ""}</span><span class="grow"></span><button class="btn btn-text btn-sm c-neutral" data-act="obj-clear" data-id="${p.id}">Clear</button></div>` : ""); }
       if (p.type === "subject") body += `<p class="t-caption">The main subject of the photo. Turn on Invert to keep this light off the subject, for light behind it.</p>`;
       body += sw("piece-inv", "Invert this part", p.invert, p.id) + `<div class="det-actions"><span class="grow"></span><button class="btn btn-text btn-sm c-error" data-act="piece-del" data-id="${p.id}">${ico("trash")}Remove</button></div>`;
     }
@@ -1039,6 +1113,7 @@ async function onAct(b) {
     const v = b.dataset.val, k = b.dataset.seg, f = focusedItem(l);
     if (k === "section") { if (v !== state.section) go("section", () => { state.section = v; state.focus = null; state.drawing = null; }); markDirty(); return; }
     if (k === "brush-mode") { state.brush.erase = v === "erase"; renderPanel(); return; }
+    if (k === "obj-mode") { state.objMode = v; renderPanel(); return; }
     if (k === "method") f.method = v;
     if (k === "ltype" && v !== l.light.type) {
       if (v === "radial") l.light = radialLight({ x: l.light.x, y: l.light.y }); else l.light = imageLight(await libraryAsset("window"), { x: l.light.x, y: l.light.y });
@@ -1085,6 +1160,7 @@ async function onAct(b) {
     case "piece-mode": piece.mode = b.dataset.val; commit(); renderPanel(); markDirty(); break;
     case "piece-inv": piece.invert = !piece.invert; commit(); renderPanel(); markDirty(); break;
     case "piece-on": piece.on = !piece.on; commit(); renderPanel(); markDirty(); break;
+    case "obj-clear": piece.points = []; piece.box = null; piece.data = null; commit(); renderPanel(); markDirty(); break;
     case "piece-del": l.mask.pieces.splice(l.mask.pieces.indexOf(piece), 1); if (state.focus === id) state.focus = null; commit(); renderPanel(); markDirty(); break;
     case "draw-piece": { const f = focusedItem(l); state.drawing = state.drawing?.id === f.id ? null : { kind: "piece", id: f.id }; renderPanel(); break; }
     case "show-mask": state.showMask = !state.showMask; renderPanel(); markDirty(); break;
@@ -1096,11 +1172,13 @@ async function addPiece(l, type) {
   if (type === "brush") p.data = zeros();
   if (type === "radial") Object.assign(p, { x: 0.5, y: 0.45, rx: 0.25, ry: 0.25, angle: 0, feather: 0.5 });
   if (type === "linear") Object.assign(p, { x0: 0.5, y0: 0.0, x1: 0.5, y1: 0.5 });
+  if (type === "object") { p.points = []; state.objMode = "add"; }
   l.mask.pieces.push(p); state.focus = p.id; state.showMask = true;
   state.drawing = type === "radial" || type === "linear" ? { kind: "piece", id: p.id } : null;
   commit(); renderPanel(); markDirty();
   if (type === "subject") { const cov = await withBusy("Finding the subject…", () => subjectCoverage()); if (cov) { p.data = cov; commit(); renderPanel(); markDirty(); } }
-  if (type === "object") toast("Drag a box around the object.");
+  if (type === "object") { toast("Tap the object on the photo, or drag a box around it.", 3200);
+    setTimeout(() => samFeatures().catch(() => {}), 400); }   // start downloading the model and reading the photo right away
   if (type === "radial" || type === "linear") toast("Drag on the photo to draw it.");
 }
 function switchLayer(d) {

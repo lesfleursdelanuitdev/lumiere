@@ -1,7 +1,7 @@
 // Smoke test: serves the repository, opens the app in headless Chromium at phone size, and checks
 // the start screen, opening a photo, the light list (including reordering by mouse and by touch),
 // the editor and its transitions, drawing a light, and undo. Pass --selection to also run AI
-// subject selection (slow without a GPU).
+// subject selection and tap-to-select (very slow without a GPU).
 //
 //   npm install && npx playwright install chromium   (once)
 //   npm test
@@ -29,6 +29,8 @@ const order = page => page.evaluate(() => [...state.layers].reverse().map(l => l
 const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
 try {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 }, hasTouch: true });
+  // Offline machines: TFJS_PATH=/path/to/tf.min.js serves TensorFlow.js locally instead of from jsDelivr.
+  if (process.env.TFJS_PATH) await page.route("**/@tensorflow/tfjs@*/dist/tf.min.js", r => r.fulfill({ path: process.env.TFJS_PATH, contentType: "text/javascript" }));
   const errors = []; page.on("pageerror", e => errors.push(e.message));
   await page.goto(url); await page.waitForTimeout(500);
 
@@ -116,6 +118,16 @@ try {
     await page.click('[data-seg="section"][data-val="mask"]'); await page.click('[data-act="add-piece-menu"]'); await page.click('#pop [data-act="add-piece"][data-val="subject"]');
     await page.waitForFunction(() => /Done in|failed|could not/i.test(document.querySelector("#toast").textContent), null, { timeout: 600000 });
     check(await page.evaluate(() => { const l = state.layers.find(x => x.id === state.activeId); return !!l.mask.pieces.at(-1).data; }), "Select Subject fills a mask");
+
+    // Tap-to-select: an Object part, one tap on the flower (SAM 2). Very slow without a GPU.
+    await settled(); await page.click('[data-act="add-piece-menu"]'); await page.click('#pop [data-act="add-piece"][data-val="object"]'); await settled();
+    const [tx, ty] = await page.evaluate(() => toScreen(0.52, 0.4));
+    await page.mouse.click(tx, ty);
+    await page.waitForFunction(() => { const p = state.layers.find(x => x.id === state.activeId).mask.pieces.at(-1);
+      return (p.type === "object" && p.data) || /failed|could not|not available/i.test(document.querySelector("#toast").textContent); }, null, { timeout: 1800000 });
+    const sel = await page.evaluate(() => { const p = state.layers.find(x => x.id === state.activeId).mask.pieces.at(-1), { mw, mh } = state.doc, at = (u, v) => p.data?.[Math.round(v * mh) * mw + Math.round(u * mw)];
+      return { points: p.points?.length, center: at(0.52, 0.4), corner: at(0.05, 0.95), toast: document.querySelector("#toast").textContent }; });
+    check(sel.points === 1 && sel.center > 200 && sel.corner < 50, `tapping the flower selects it (${JSON.stringify(sel)})`);
   }
   check(errors.length === 0, "no page errors" + (errors.length ? ": " + errors.join("; ") : ""));
 } finally { await browser.close(); server.close(); }
