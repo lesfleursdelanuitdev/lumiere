@@ -96,7 +96,7 @@ try {
   await page.click("#undo");   // keep the scene light: software rendering in CI takes seconds per frame
   await page.dblclick("#s-opacity"); check(Math.abs((await active()).opacity - 0.8) < 1e-9, "double-tapping a slider resets it");
   // Software rendering here can take seconds per frame, so wait for the sheet to finish animating.
-  const settled = () => page.waitForFunction(() => !document.querySelector("#sheet").getAnimations().length && !document.querySelector("#panel").getAnimations().length, null, { timeout: 120000 });
+  const settled = () => page.waitForFunction(() => document.getAnimations().every(a => a.playState !== "running"), null, { timeout: 120000 });
   const h0 = (await page.locator("#sheet").boundingBox()).height; await page.click("#grab"); await page.waitForFunction(() => state.tall, null, { timeout: 120000 }).catch(() => {}); await settled();
   check((await page.locator("#sheet").boundingBox()).height > h0 && await page.evaluate(() => state.tall), "the grabber makes the panel taller");
   await page.click("#grab"); await page.waitForFunction(() => !state.tall, null, { timeout: 120000 }).catch(() => {}); await settled();
@@ -106,7 +106,7 @@ try {
   check(small.length === 0, "every button in the editor is at least 44 px" + (small.length ? ": " + JSON.stringify(small) : ""));
 
   // Draw a new radial light (a new gradient starts at size 0.3; drawing must change it).
-  await page.click('[data-act="to-list"]'); await settled(); await page.click('[data-act="new-light"]'); await page.click('[data-new="radial"]'); await page.waitForTimeout(400);
+  await page.click('[data-act="to-list"]'); await settled(); await page.click('[data-act="new-light"]'); await settled(); await page.click('[data-new="radial"]'); await page.waitForTimeout(400);
   await page.mouse.move(120, 330); await page.mouse.down(); await page.mouse.move(190, 360, { steps: 6 }); await page.mouse.up();
   const drawn = await page.evaluate(() => { const l = state.layers.find(x => x.id === state.activeId); return l.light.type === "radial" && Math.abs(l.light.rx - 0.3) > 0.01 && Math.abs(l.light.rx - l.light.ry) < 1e-9; });
   check(drawn, "a new radial gradient can be drawn by dragging");

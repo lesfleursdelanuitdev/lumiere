@@ -1138,8 +1138,11 @@ function grabTo(dir) {
   if (dir > 0) setTall(true); else if (dir < 0) { if (state.tall) setTall(false); else if (state.ui === "list") go("down", () => { state.ui = "bar"; }); }
   else setTall(!state.tall);
 }
-grab.addEventListener("pointerdown", e => { grabY = e.clientY; try { grab.setPointerCapture(e.pointerId); } catch {} });
-grab.addEventListener("pointerup", e => { if (grabY == null) return; const dy = e.clientY - grabY; grabY = null; grabTo(Math.abs(dy) < 12 ? 0 : dy < 0 ? 1 : -1); });
+// Tap or swipe is decided by how far the finger moved, not by where it ended (the sheet itself may move meanwhile).
+let grabDy = 0;
+grab.addEventListener("pointerdown", e => { grabY = e.clientY; grabDy = 0; try { grab.setPointerCapture(e.pointerId); } catch {} });
+grab.addEventListener("pointermove", e => { if (grabY != null) grabDy = e.clientY - grabY; });
+grab.addEventListener("pointerup", () => { if (grabY == null) return; const dy = grabDy; grabY = null; grabTo(Math.abs(dy) < 12 ? 0 : dy < 0 ? 1 : -1); });
 grab.addEventListener("pointercancel", () => { grabY = null; });
 grab.addEventListener("click", e => { if (e.detail === 0) grabTo(0); }); // keyboard
 
