@@ -244,6 +244,7 @@ const BLENDS = [["screen", "Screen"], ["overlay", "Overlay"], ["lighten", "Light
 const BLEND_ID = { screen: 0, overlay: 1, lighten: 2, dodge: 3 };
 const SWATCHES = [["1900K", "#ff8400"], ["2700K", "#ffa757"], ["3200K", "#ffb87b"], ["5600K", "#ffefe1"], ["7500K", "#e6ebff"], ["Magenta", "#ff4fa8"], ["Cyan", "#4fd2ff"]];
 const PREVIEW_LONG = 1600, MASK_LONG = 1024, THUMB = 104;
+const WORK_LONG = 2048;   // the working copy of a photo: everything but export uses it (preview 1600, masks 1024, AI 320/1024)
 const TFJS_URL = "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js";
 const MODEL_URL = "models/u2netp.json"; // U²-Net-p salient object model (Apache-2.0), published next to this page
 const SAM_JS = "sam2.js", SAM_URL = "models/sam2-tiny/", SAM_MB = 62; // SAM 2.1 Hiera Tiny (Meta, Apache-2.0): tap-to-select for Object
@@ -647,14 +648,14 @@ function drawLightImage(kind, S = 1024) {
 }
 async function libraryAsset(kind) {
   const key = "lib:" + kind; if (assets.has(key)) return key;
-  const url = drawLightImage(kind).toDataURL("image/png"), img = await loadImage(url);
-  assets.set(key, { img, w: img.naturalWidth, h: img.naturalHeight, dataURL: url, tex: texFromImage(img, img.naturalWidth, img.naturalHeight) }); return key;
+  const p = await readPhoto(await new Promise(r => drawLightImage(kind).toBlob(r, "image/png")));
+  assets.set(key, { ...p, tex: texFromImage(p.img, p.w, p.h) }); return key;
 }
 const thumbCache = {};
 function libThumb(k) { if (thumbCache[k]) return thumbCache[k]; const c = drawLightImage(k, 160), t = document.createElement("canvas"); t.width = t.height = 160; const g = t.getContext("2d"); g.fillStyle = "#000"; g.fillRect(0, 0, 160, 160); g.drawImage(c, 0, 0); return (thumbCache[k] = t.toDataURL("image/jpeg", 0.85)); }
-async function assetFromFile(file) {
-  const url = await readDataURL(file), img = await loadImage(url), key = "img" + Date.now(), s = Math.min(1, 1024 / Math.max(img.naturalWidth, img.naturalHeight));
-  assets.set(key, { img, w: img.naturalWidth, h: img.naturalHeight, dataURL: url, tex: texFromImage(img, Math.round(img.naturalWidth * s), Math.round(img.naturalHeight * s)) }); return key;
+async function assetFromFile(file, key = "img" + Date.now()) {
+  const p = await readPhoto(file), s = Math.min(1, 1024 / Math.max(p.w, p.h));
+  assets.set(key, { ...p, tex: texFromImage(p.img, Math.round(p.w * s), Math.round(p.h * s)) }); return key;
 }
 
 /* ═════════════════════════ on-device selection (U²-Net-p + guided filter) ═════════════════════════ */
@@ -708,7 +709,8 @@ function ensureNet() {
 }
 async function predictRect(sx, sy, sw, sh) {
   const net = await ensureNet(), c = document.createElement("canvas"); c.width = c.height = 320; const g = c.getContext("2d");
-  g.drawImage(assets.get("base").img, sx, sy, sw, sh, 0, 0, 320, 320); const px = g.getImageData(0, 0, 320, 320).data, x = new Float32Array(320 * 320 * 3);
+  // the rectangle is in original pixels; the working copy is k times that size
+  const b = assets.get("base"); g.drawImage(b.img, sx * b.k, sy * b.k, sw * b.k, sh * b.k, 0, 0, 320, 320); const px = g.getImageData(0, 0, 320, 320).data, x = new Float32Array(320 * 320 * 3);
   for (let i = 0, j = 0; i < px.length; i += 4) for (let k = 0; k < 3; k++) x[j++] = (px[i + k] / 255 - net.mean[k]) / net.std[k];
   const xt = tf.tensor4d(x, [1, 320, 320, 3]), yt = await net.runNet(xt), p = await yt.data(); xt.dispose(); yt.dispose();
   let lo = Infinity, hi = -Infinity; for (const v of p) { if (v < lo) lo = v; if (v > hi) hi = v; }
@@ -1357,17 +1359,29 @@ function toast(msg, ms = 2600, action) {
 /* ═════════════════════════ documents, projects, export ═════════════════════════ */
 function loadImage(src) { return new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error("That file could not be read as an image.")); im.src = src; }); }
 const readDataURL = f => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(f); });
-function setDocument(img, dataURL, name) {
-  const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height, s = Math.min(1, PREVIEW_LONG / Math.max(w, h), MAX_TEX / Math.max(w, h)), ms = Math.min(1, MASK_LONG / Math.max(w, h));
-  const old = assets.get("base"); if (old) gl.deleteTexture(old.tex);
+const dataURLToBlob = u => { const i = u.indexOf(","), mime = /^data:([^;,]+)/.exec(u)?.[1] || "image/jpeg"; return new Blob([unb64(u.slice(i + 1))], { type: mime }); };
+async function decodeFile(blob) { const url = URL.createObjectURL(blob); try { return await loadImage(url); } finally { URL.revokeObjectURL(url); } }
+// A photo is kept as its original file (still compressed) plus a working copy at most WORK_LONG
+// pixels long, instead of the full decoded image (about 180 MB for a 45.7 MP photo) and a text
+// copy of the file. The original is decoded again only to export. k = working size / original size.
+async function readPhoto(blob) {
+  const full = await decodeFile(blob), w = full.naturalWidth, h = full.naturalHeight, s = Math.min(1, WORK_LONG / Math.max(w, h));
+  if (s === 1) return { file: blob, img: full, w, h, k: 1 };
+  const c = document.createElement("canvas"); c.width = Math.round(w * s); c.height = Math.round(h * s);
+  const g = c.getContext("2d"); g.imageSmoothingQuality = "high"; g.drawImage(full, 0, 0, c.width, c.height); full.src = "";
+  return { file: blob, img: c, w, h, k: c.width / w };
+}
+function setDocument(photo, name) {
+  const { img, w, h } = photo, s = Math.min(1, PREVIEW_LONG / Math.max(w, h), MAX_TEX / Math.max(w, h)), ms = Math.min(1, MASK_LONG / Math.max(w, h));
+  const old = assets.get("base"); if (old) { gl.deleteTexture(old.tex); if (old.img instanceof HTMLCanvasElement) old.img.width = old.img.height = 0; }   // free the old working copy now
   state.doc = { w, h, pw: Math.round(w * s), ph: Math.round(h * s), mw: Math.round(w * ms), mh: Math.round(h * ms), name };
-  assets.set("base", { img, w, h, dataURL, tex: texFromImage(img, Math.round(w * s), Math.round(h * s)) });
+  assets.set("base", { ...photo, tex: texFromImage(img, Math.round(w * s), Math.round(h * s)) });
   dropMaskCache(); allocPreview(); guideCache = null; subjectCache = null; thumbs.clear();
 }
 async function openPhoto(file) {
   try {
-    const url = await readDataURL(file), img = await loadImage(url); const hadMasks = state.layers.some(l => l.mask.pieces.length);
-    setDocument(img, url, file.name.replace(/\.[^.]+$/, ""));
+    const photo = await readPhoto(file); const hadMasks = state.layers.some(l => l.mask.pieces.length);
+    setDocument(photo, file.name.replace(/\.[^.]+$/, ""));
     for (const l of state.layers) l.mask.pieces = [];
     resetHistory(); showEditor(); markDirty();
     toast(hadMasks ? "Photo opened. Lights carry over; their masks were cleared because they belonged to the old photo." : "Photo opened. Your lights carry over.", 3600);
@@ -1378,18 +1392,18 @@ function openAny(f) { if (/\.json$/i.test(f.name) || f.type === "application/jso
 for (const id of ["#openFile", "#dropFile"]) $(id).addEventListener("change", e => { const f = e.target.files[0]; e.target.value = ""; if (f) openAny(f); });
 function b64(u8) { let s = ""; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); }
 function unb64(s) { const bin = atob(s), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
-function projectJSON() {
-  const imgs = {}; for (const l of state.layers) if (l.light.type === "image") imgs[l.light.key] = assets.get(l.light.key).dataURL;
+async function projectJSON() {   // the photo and light images are turned into text only now, when saving
+  const imgs = {}; for (const l of state.layers) if (l.light.type === "image" && !imgs[l.light.key]) imgs[l.light.key] = await readDataURL(assets.get(l.light.key).file);
   return JSON.stringify({ app: "lumiere", version: 3, saved: new Date().toISOString(),
-    document: { width: state.doc.w, height: state.doc.h, mask: { width: state.doc.mw, height: state.doc.mh }, name: state.doc.name }, photo: assets.get("base").dataURL, images: imgs,
+    document: { width: state.doc.w, height: state.doc.h, mask: { width: state.doc.mw, height: state.doc.mh }, name: state.doc.name }, photo: await readDataURL(assets.get("base").file), images: imgs,
     layers: state.layers.map(l => { const c = cloneLayer(l); c.mask.pieces = c.mask.pieces.map(p => ({ ...p, data: p.data ? b64(p.data) : undefined })); return c; }) });
 }
 async function openProject(file) {
   try {
     const p = JSON.parse(await file.text()); if (p.app !== "lumiere" && p.app !== "light-studio") throw new Error("That file is not a Lumière project.");
     if (p.version !== 3) throw new Error("That project was saved by an earlier prototype and cannot be opened here.");
-    const img = await loadImage(p.photo); setDocument(img, p.photo, p.document.name || "project");
-    for (const k in p.images) { const im = await loadImage(p.images[k]), s = Math.min(1, 1024 / Math.max(im.naturalWidth, im.naturalHeight)); assets.set(k, { img: im, w: im.naturalWidth, h: im.naturalHeight, dataURL: p.images[k], tex: texFromImage(im, Math.round(im.naturalWidth * s), Math.round(im.naturalHeight * s)) }); }
+    setDocument(await readPhoto(dataURLToBlob(p.photo)), p.document.name || "project");
+    for (const k in p.images) await assetFromFile(dataURLToBlob(p.images[k]), k);
     state.layers = p.layers.map(l => ({ ...l, id: uid(), mask: { ...l.mask, pieces: l.mask.pieces.map(x => ({ ...x, data: x.data ? unb64(x.data) : undefined })) } }));
     state.activeId = state.layers.at(-1)?.id || null; state.ui = "list"; resetHistory(); showEditor(); markDirty(); toast("Project opened.");
   } catch (err) { toast(err.message || "That project could not be opened.", 4000); }
@@ -1397,7 +1411,9 @@ async function openProject(file) {
 let downloads = null; (async () => { try { downloads = await window.claude?.use?.("downloads"); } catch { downloads = null; } })();
 function exportSize() { const { w, h } = state.doc, s = Math.min(1, MAX_TEX / Math.max(w, h), Math.sqrt(16.7e6 / (w * h))); return [Math.round(w * s), Math.round(h * s), s]; }
 async function renderFull(kind) {
-  const [W, H] = exportSize(), made = [], base = texFromImage(assets.get("base").img, W, H); made.push(base); const imgT = new Map();
+  const [W, H] = exportSize(), b = assets.get("base"), made = [], imgT = new Map();
+  let full = b.img; if (b.k < 1) full = await decodeFile(b.file);   // the original, decoded only for as long as export needs it
+  const base = texFromImage(full, W, H); made.push(base); if (full !== b.img) full.src = "";
   for (const l of state.layers) if (l.light.type === "image" && !imgT.has(l.light.key)) { const a = assets.get(l.light.key), s = Math.min(1, MAX_TEX / Math.max(a.w, a.h)), t = texFromImage(a.img, Math.round(a.w * s), Math.round(a.h * s)); imgT.set(l.light.key, t); made.push(t); }
   const t = { A: makeTarget(W, H), B: makeTarget(W, H), L1: makeTarget(W, H), L2: makeTarget(W, H), M1: T.M1, M2: T.M2 };
   const out = renderDoc({ W, H, base, img: k => imgT.get(k), T: t, quality: "export" });
@@ -1441,7 +1457,7 @@ $("#modal").addEventListener("click", async e => {
   const pr = e.target.closest("[data-preset]"); if (pr) { applyPreset(pr.dataset.preset); return; }
   const nl = e.target.closest("[data-new]"); if (nl) { newLight(nl.dataset.new); return; }
   const b = e.target.closest("[data-exp]"); if (!b) return; const k = b.dataset.exp, st = $("#expStatus"), name = (state.doc.name || "photo").replace(/[^\w.-]+/g, "-");
-  if (k === "proj") { await offer(name + ".lumiere.json", projectJSON()); return; }
+  if (k === "proj") { await offer(name + ".lumiere.json", await projectJSON()); return; }
   st.textContent = "Rendering at full resolution…"; await new Promise(r => setTimeout(r, 30));
   const t0 = performance.now(), blob = await renderFull(k); st.textContent = `Rendered in ${((performance.now() - t0) / 1000).toFixed(1)} s.`; await offer(`${name}-lit.${k}`, blob, blob);
 });
@@ -1504,7 +1520,7 @@ async function boot() {
   $("#dropHint").textContent = DROP_HINT; $("#startPresets").innerHTML = presetCards("data-start-preset"); resize(); $("#drop").hidden = false; renderPanel(); requestAnimationFrame(loop);
 }
 async function loadSample() {
-  const url = makeSample().toDataURL("image/jpeg", 0.92), img = await loadImage(url); setDocument(img, url, "dahlia-sample");
+  setDocument(await readPhoto(await new Promise(r => makeSample().toBlob(r, "image/jpeg", 0.92))), "dahlia-sample");
   const subj = sampleSubject(), sm = (density = 1) => ({ pieces: [newPiece("subject", { invert: true, data: subj })], density, feather: 0.004, invert: false });
   const halo = makeLayer("Halo · 3200K", radialLight({ x: 0.36, y: 0.3, rx: 0.42, ry: 0.36, angle: -0.5, soft: 0.95 }), { opacity: 0.85, blurs: [radialBlur(0.35, 0.52, 0.4), gaussBlur(0.02)], mask: sm() });
   const win = makeLayer("Window beams", imageLight(await libraryAsset("window"), { x: 0.74, y: 0.14, scale: 0.42, angle: 0.15 }), { opacity: 0.7, blurs: [radialBlur(0.6, 1.12, -0.14)], mask: sm(0.6) });

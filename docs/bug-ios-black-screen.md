@@ -1,6 +1,6 @@
 # Bug: the whole page goes black on iPhone during Select Subject
 
-Status: **fixes 1 and 2 done, waiting for a retest on the iPhone**. Diagnosed from measurements; not
+Status: **fixes 1–3 done, waiting for a retest on the iPhone**. Diagnosed from measurements; not
 yet reproduced on an iPhone.
 
 ## Report
@@ -154,7 +154,7 @@ In order of priority. Each has a check that proves it worked.
   of 0.9 GB), so process numbers above were measured without it. The selection test now fails
   if reading the photo or a tap goes above 200 MB.
 
-### 3. Work from a reduced copy of large photos (high)
+### 3. Work from a reduced copy of large photos (high) · done
 
 - **Where:** `setDocument`, `openPhoto`, `projectJSON`, `renderFull`, and the selection code
   that draws `assets.base.img`.
@@ -169,6 +169,26 @@ In order of priority. Each has a check that proves it worked.
   unchanged.
 - **Check:** process memory with the Z7-size test photo; export still full size (within the
   existing 16.7 MP browser limit).
+- **Result:**
+  - **How it works now:** a photo is kept as its original file plus a working copy at most
+    **2,048 px** long, smaller than the 4,096 planned because nothing but export needs more.
+    The original is decoded only while exporting. The project file's text is built only when
+    saving, and opening a project turns its embedded photo back into a file. Light images are
+    handled the same way.
+  - **Exports are byte-identical to before** (SHA-256 of the PNG) for the sample, for the
+    sample saved and reopened as a project, and for a 45.7 MP photo exported at 5005 × 3337.
+  - **Page process with the 45.7 MP photo:** 204 → 146 MB with the photo open; 278–306 →
+    219 MB during Select Subject. That is about 60 MB saved, less than the 200 MB estimated,
+    because Chromium already discards decoded image data it is not using. iOS Safari may
+    hold on to it longer, so the saving there could be larger.
+  - **Side effects:**
+    - **Select Subject on very large photos** now reads the 2,048 px working copy instead of
+      downsizing from the full photo, so its masks can differ very slightly.
+    - **Your own light images larger than 2,048 px** are exported from their working copy.
+    - **The original is still decoded briefly** when a photo opens (to make the working copy)
+      and when exporting.
+  - **New tests:** a large photo keeps a 2,048 px working copy and exports at full size; a
+    saved project opens again unchanged.
 
 ### 4. One AI job at a time, and give the GPU back afterwards (medium)
 

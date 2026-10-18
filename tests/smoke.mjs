@@ -50,6 +50,15 @@ try {
   check(await page.evaluate(() => state.doc.w === 640 && state.doc.h === 480), "the opened photo is the document");
   check(await page.isEnabled("#exportBtn"), "Export is enabled once a photo is open");
 
+  // A large photo is kept as a small working copy, yet exports at full size from the original file.
+  const big = await page.evaluate(async () => { const c = document.createElement("canvas"); c.width = 4800; c.height = 3200; const g = c.getContext("2d");
+    g.fillStyle = "#203040"; g.fillRect(0, 0, 4800, 3200); g.fillStyle = "#e0a060"; g.fillRect(2000, 1200, 800, 800);
+    const blob = await new Promise(r => c.toBlob(r, "image/jpeg", 0.9)); c.width = c.height = 0;
+    await openPhoto(new File([blob], "big.jpg", { type: "image/jpeg" }));
+    const b = assets.get("base"), out = await createImageBitmap(await renderFull("png"));
+    return { k: +b.k.toFixed(3), work: [b.img.width, b.img.height], doc: [state.doc.w, state.doc.h], exported: [out.width, out.height] }; });
+  check(big.work[0] === 2048 && big.doc[0] === 4800 && big.exported[0] === 4800 && big.exported[1] === 3200, `a large photo keeps a 2048 px working copy and exports at full size (${JSON.stringify(big)})`);
+
   // The sample, for a document with lights.
   await page.goto(url); await page.click("#trySample");
   await page.waitForFunction(() => typeof state !== "undefined" && state.layers.length === 2, null, { timeout: 60000 }).catch(() => {});
@@ -114,6 +123,13 @@ try {
   const drawn = await page.evaluate(() => { const l = state.layers.find(x => x.id === state.activeId); return l.light.type === "radial" && Math.abs(l.light.rx - 0.3) > 0.01 && Math.abs(l.light.rx - l.light.ry) < 1e-9; });
   check(drawn, "a new radial gradient can be drawn by dragging");
   await page.click("#undo"); check(await page.evaluate(() => state.layers.length === 3), "undo works");
+
+  // A project saved and opened again has the same photo and lights.
+  const trip = await page.evaluate(async () => { const before = { n: state.layers.length, names: state.layers.map(l => l.name).join("|"), w: state.doc.w, h: state.doc.h }, text = await projectJSON();
+    await openProject(new File([text], "p.lumiere.json", { type: "application/json" }));
+    return { before, after: { n: state.layers.length, names: state.layers.map(l => l.name).join("|"), w: state.doc.w, h: state.doc.h }, mb: +(text.length / 1048576).toFixed(1) }; });
+  check(JSON.stringify(trip.before) === JSON.stringify(trip.after), `a saved project opens again unchanged (${trip.after.n} lights, ${trip.mb} MB)`);
+  await settled(); await page.click('[data-act="edit"] >> nth=0'); await settled();   // back into the editor for what follows
 
   if (process.argv.includes("--selection")) {
     page.setDefaultTimeout(120000);   // software rendering: frames can take seconds while models run
